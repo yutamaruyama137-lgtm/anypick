@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
+type CookieOptions = Parameters<NextResponse["cookies"]["set"]>[2];
+
 export async function POST(req: NextRequest) {
   let body: { email: string; password: string };
   try {
@@ -19,7 +21,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "サーバー設定エラー" }, { status: 500 });
   }
 
-  // 返す Response にクッキーを直接載せて、確実にブラウザにセッションを渡す
   const response = NextResponse.json({ ok: true, message: "ログインしました" });
   const supabase = createServerClient(url, anonKey, {
     cookies: {
@@ -28,7 +29,15 @@ export async function POST(req: NextRequest) {
       },
       setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
         cookiesToSet.forEach(({ name, value, options }) => {
-          const opts = options as { path?: string; maxAge?: number; httpOnly?: boolean; secure?: boolean; sameSite?: "lax" | "strict" | "none" } | undefined;
+          const opts: CookieOptions = options
+            ? {
+                path: (options.path as string) ?? "/",
+                maxAge: options.maxAge as number | undefined,
+                httpOnly: options.httpOnly as boolean | undefined,
+                secure: options.secure as boolean | undefined,
+                sameSite: (options.sameSite as "lax" | "strict" | "none") || "lax",
+              }
+            : { path: "/" };
           response.cookies.set(name, value, opts);
         });
       },

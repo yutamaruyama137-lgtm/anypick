@@ -2,6 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
+import { getAppOrigin } from "@/lib/app-url";
 import { AdminEventTabs } from "./AdminEventTabs";
 
 export default async function EventDetailPage({
@@ -26,7 +27,7 @@ export default async function EventDetailPage({
     .single();
   if (!event) notFound();
 
-  const origin = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const origin = getAppOrigin();
   const participantUrl = `${origin}/e/${event.event_token}`;
 
   return (

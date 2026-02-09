@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
+import { getAppOrigin } from "@/lib/app-url";
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
@@ -22,7 +23,7 @@ export default async function AdminDashboardPage() {
     .eq("tenant_id", adminUser.tenant_id)
     .order("created_at", { ascending: false });
 
-  const origin = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const origin = getAppOrigin();
 
   return (
     <main className="max-w-6xl mx-auto p-6">

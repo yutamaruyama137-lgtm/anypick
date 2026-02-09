@@ -49,10 +49,11 @@ export default function AdminLoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), password }),
+        credentials: "include",
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "ログインに失敗しました");
-      // フルリロードで遷移し、セッションクッキーを確実に送る（router.push だと拡張の DOM エラーで遷移しない場合あり）
+      // フルリロードで遷移（セッションクッキーを送る）
       window.location.href = "/admin";
       return;
     } catch (err) {

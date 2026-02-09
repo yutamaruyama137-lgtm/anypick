@@ -19,15 +19,15 @@
 
 （値は `.env.local` と同じでOKです。）
 
-### 本番URLを参加者用にする場合（任意）
+### 参加者URL・QRコードのベースURL
 
-QRコードや参加者リンクを本番ドメインにしたいときは、以下も追加します。
+参加者URL（イベント詳細の「参加者URL」やQRコード）は次の優先順で決まります。
 
-| Name | Value |
-|------|--------|
-| `NEXT_PUBLIC_APP_URL` | デプロイ後のURL（例: `https://anypick.vercel.app`） |
+1. **NEXT_PUBLIC_APP_URL** を設定している場合 → その値
+2. 未設定でも **Vercel デプロイ時** → `VERCEL_URL` から自動で `https://あなたのプロジェクト.vercel.app` を使用
+3. 上記以外（ローカル） → `http://localhost:3000`
 
-※ 未設定の場合は Vercel のデプロイURLが使われます。
+カスタムドメインを使う場合は、**NEXT_PUBLIC_APP_URL** にそのURL（例: `https://anypick.example.com`）を設定してください。
 
 ## 3. Deploy をクリック
 
