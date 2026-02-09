@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { createServiceRoleClient } from "@/lib/supabase/admin";
 
 type CookieOptions = Parameters<NextResponse["cookies"]["set"]>[2];
 
@@ -73,6 +74,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.redirect(new URL("/admin/login?error=login_failed", req.url), 302);
     }
     return NextResponse.json({ error: "ログインに失敗しました" }, { status: 401 });
+  }
+
+  // ダッシュボードは admin_users の存在も見る。未登録なら OAuth コールバックと同様に tenant + admin_user を作成
+  const user = data.user;
+  if (user?.id && user?.email) {
+    const admin = createServiceRoleClient();
+    const { data: existing } = await admin
+      .from("admin_users")
+      .select("id")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (!existing) {
+      const { data: newTenant, error: tenantErr } = await admin
+        .from("tenants")
+        .insert({ name: user.email })
+        .select("id")
+        .single();
+      if (!tenantErr && newTenant) {
+        await admin.from("admin_users").insert({
+          id: user.id,
+          tenant_id: newTenant.id,
+          email: user.email,
+          role: "organizer_admin",
+        });
+      }
+    }
   }
 
   return response;

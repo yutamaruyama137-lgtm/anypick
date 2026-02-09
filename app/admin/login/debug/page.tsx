@@ -52,7 +52,12 @@ export default function AdminLoginDebugPage() {
           </pre>
         )}
         {me?.user ? (
-          <p className="text-green-400 text-sm mt-2">✓ ログイン済みです。ダッシュボードへ進めます。</p>
+          <div className="mt-2 space-y-1">
+            <p className="text-green-400 text-sm">✓ ログイン済みです。</p>
+            <p className="text-zinc-400 text-sm">
+              「ダッシュボードへ」ボタンで<strong className="text-white">イベント一覧</strong>（新規イベント作成・既存イベントの一覧）が開きます。
+            </p>
+          </div>
         ) : me && !me.user ? (
           <p className="text-amber-400 text-sm mt-2">✗ 未ログイン（またはセッション切れ）</p>
         ) : null}
@@ -89,19 +94,24 @@ export default function AdminLoginDebugPage() {
         )}
       </section>
 
-      <div className="flex gap-3">
-        <Link
-          href="/admin"
-          className="rounded-xl bg-brand-500 px-4 py-2 font-medium text-black hover:bg-brand-400"
-        >
-          ダッシュボードへ
-        </Link>
-        <Link
-          href="/admin/login"
-          className="rounded-xl border border-zinc-600 px-4 py-2 text-zinc-300 hover:bg-zinc-800"
-        >
-          ログイン画面へ
-        </Link>
+      <div className="space-y-3">
+        <p className="text-zinc-500 text-sm">
+          <strong className="text-zinc-400">ダッシュボード</strong>＝イベント一覧のページです。「ダッシュボードへ」を押すとそのページに移動します。
+        </p>
+        <div className="flex gap-3">
+          <Link
+            href="/admin"
+            className="rounded-xl bg-brand-500 px-4 py-3 font-medium text-black hover:bg-brand-400"
+          >
+            ダッシュボードへ（イベント一覧）
+          </Link>
+          <Link
+            href="/admin/login"
+            className="rounded-xl border border-zinc-600 px-4 py-3 text-zinc-300 hover:bg-zinc-800"
+          >
+            ログイン画面へ
+          </Link>
+        </div>
       </div>
     </main>
   );

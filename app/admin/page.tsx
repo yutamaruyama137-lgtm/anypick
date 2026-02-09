@@ -10,11 +10,29 @@ export default async function AdminDashboardPage() {
   if (!user) redirect("/admin/login");
 
   const admin = createServiceRoleClient();
-  const { data: adminUser } = await admin
+  let { data: adminUser } = await admin
     .from("admin_users")
     .select("tenant_id")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
+
+  // 認証済みなのに admin_users にいない場合はここで自動作成（右上にメールが出ている＝必ずダッシュボードを表示）
+  if (!adminUser && user.id && user.email) {
+    const { data: newTenant, error: tenantErr } = await admin
+      .from("tenants")
+      .insert({ name: user.email })
+      .select("id")
+      .single();
+    if (!tenantErr && newTenant) {
+      await admin.from("admin_users").insert({
+        id: user.id,
+        tenant_id: newTenant.id,
+        email: user.email,
+        role: "organizer_admin",
+      });
+      adminUser = { tenant_id: newTenant.id };
+    }
+  }
   if (!adminUser) redirect("/admin/login");
 
   const { data: events } = await admin

@@ -119,11 +119,16 @@ export default function AdminLoginPage() {
         <h1 className="font-display text-xl font-bold text-white mb-2 text-center">
           {mode === "login" ? "主催者ログイン" : "主催者新規登録"}
         </h1>
-        <p className="text-zinc-500 text-sm text-center mb-6">
+        <p className={`text-zinc-500 text-sm text-center ${mode === "login" ? "mb-2" : "mb-6"}`}>
           {mode === "login"
             ? "メールアドレスとパスワードでログイン"
             : "パスワードは8文字以上で設定してください"}
         </p>
+        {mode === "login" && (
+          <p className="text-zinc-500 text-xs text-center mb-6">
+            入力して「ログイン」を押すと、<strong className="text-zinc-400">イベント一覧（ダッシュボード）</strong>が開きます。
+          </p>
+        )}
 
         {error === "no_code" && (
           <p className="text-amber-400 text-sm mb-4 text-center">
