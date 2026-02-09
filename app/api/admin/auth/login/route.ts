@@ -28,7 +28,8 @@ export async function POST(req: NextRequest) {
       },
       setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
         cookiesToSet.forEach(({ name, value, options }) => {
-          response.cookies.set(name, value, options as { path?: string; maxAge?: number; httpOnly?: boolean; secure?: boolean; sameSite?: string });
+          const opts = options as { path?: string; maxAge?: number; httpOnly?: boolean; secure?: boolean; sameSite?: "lax" | "strict" | "none" } | undefined;
+          response.cookies.set(name, value, opts);
         });
       },
     },
