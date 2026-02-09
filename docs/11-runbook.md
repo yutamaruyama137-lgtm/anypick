@@ -8,7 +8,7 @@
 
 - **DB**: Supabase（Postgres + Auth + Storage）
 - **Frontend**: Next.js（App Router）PWA
-- **認証（主催者）**: Supabase Auth のメール＋パスワード（ログイン / 新規登録）
+- **認証（主催者）**: Supabase Auth（Google ログイン / メール＋パスワードのログイン・新規登録）
 
 ---
 
@@ -55,6 +55,13 @@
    - 開発用: `http://localhost:3000/**`
 
 ※ アプリ側では、新規登録時に「今アクセスしているサイトの origin」を Supabase に渡しているため、本番から登録した場合は確認メールのリンクも本番URLになります。上記の Supabase 設定とあわせて行うと確実です。
+
+**Google ログインを使う場合**
+
+1. ダッシュボード → **Authentication** → **Providers** → **Google**
+2. **Enable Sign in with Google** をオンにする
+3. Google Cloud Console で OAuth 2.0 クライアント ID（Web アプリ）を作成し、Supabase に表示されている **Client ID** と **Client Secret** を入力する
+4. **Redirect URLs**（上記 URL Configuration）に、本番・開発用のコールバックが含まれるように `https://あなたのドメイン.vercel.app/**` と `http://localhost:3000/**` を登録しておく（Google 認証後、Supabase が `/admin/callback` にリダイレクトするため）
 
 ### 2-5. 環境変数（手動）
 
