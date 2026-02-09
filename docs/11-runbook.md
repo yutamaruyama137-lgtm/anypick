@@ -8,7 +8,7 @@
 
 - **DB**: Supabase（Postgres + Auth + Storage）
 - **Frontend**: Next.js（App Router）PWA
-- **認証（主催者）**: Supabase Auth のマジックリンク
+- **認証（主催者）**: Supabase Auth のメール＋パスワード（ログイン / 新規登録）
 
 ---
 
@@ -37,7 +37,16 @@
    - 名前: `media` … 参加者アップロード画像用
 3. いずれも **Private** のまま。アップロード・署名URLは **service_role** で行うため、追加ポリシーがなくても動作する。
 
-### 2-4. 環境変数（手動）
+### 2-4. Authentication（メール＋パスワードを有効にする）
+
+主催者ログインでパスワードを設定・利用するために、Supabase で以下を確認してください。
+
+1. ダッシュボード → **Authentication** → **Providers** → **Email**
+2. **Enable Email provider** をオンにする
+3. **Confirm email** は開発時はオフ（オンの場合は新規登録後に確認メールのリンクをクリックする必要あり）
+4. これで「メール＋パスワード」での signUp / signIn が利用可能になります（マジックリンクは使っていません）
+
+### 2-5. 環境変数（手動）
 
 プロジェクトルートに **`.env.local`** を作成:
 
@@ -50,7 +59,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 - 参加者向け API とクライアント: `NEXT_PUBLIC_*` と `anon`
 - 管理 API（主催者・署名URL発行など）: `service_role` をサーバーだけで使用
 
-### 2-5. 依存関係インストール・起動（手動）
+### 2-6. 依存関係インストール・起動（手動）
 
 ```bash
 cd c:\Users\youta\Downloads\AnyPick
@@ -60,7 +69,7 @@ npm run dev
 
 ブラウザで `http://localhost:3000` を開く。
 
-### 2-6. ビルド確認（任意）
+### 2-7. ビルド確認（任意）
 
 ```bash
 npm run build
@@ -85,9 +94,8 @@ npm run build
 
 ## 4. 主催者認証（Supabase Auth）の流れ
 
-- **ログイン**: メール入力 → `supabase.auth.signInWithOtp({ email })` → マジックリンク送信
-- **コールバック**: リンククリック後、アプリで `supabase.auth.getSession()` でユーザー取得
-- **テナント紐づけ**: 初回ログイン時、`admin_users` にレコードが無ければ `tenants` を 1 件作成し、`admin_users` に `id = auth.uid()`, `email`, `tenant_id`, `role = 'organizer_admin'` を insert（サーバー側で `service_role` 使用）
+- **ログイン**: メール＋パスワード入力 → `signInWithPassword({ email, password })` → セッションをクッキーに保存 → `/admin` へ
+- **新規登録**: メール＋パスワード（8文字以上）入力 → `signUp({ email, password })` → 同一リクエスト内で `tenants` と `admin_users` を自動作成（サーバー側で `service_role` 使用）→ そのままログイン状態で `/admin` へ（Confirm email オフの場合）
 
 ---
 
@@ -115,7 +123,7 @@ npm run build
 | Storage バケット | `frames` と `media` を作成 |
 | `.env.local` | 上記の 3 変数を設定 |
 | `npm install` & `npm run dev` | ローカル起動・動作確認 |
-| 初回管理者 | 管理画面でマジックリンクログインすると、テナント＋管理者が自動作成される想定 |
+| 初回管理者 | 管理画面で「新規登録」からメール＋パスワードで登録すると、テナント＋管理者が自動作成される |
 
 ---
 
@@ -134,6 +142,30 @@ npm run lint     # Lint
 
 - **DB エラー**: Supabase の **Table Editor** でテーブルができているか確認。外部キーで参照しているため、`tenants` → `admin_users` → `events` の順で作成される。
 - **署名 URL が 403**: Storage のポリシーと、`service_role` で署名しているか確認。
-- **マジックリンクが届かない**: Supabase の **Authentication** → **Providers** → **Email** で確認。開発時は「Confirm email」をオフにすると楽な場合あり。
+- **パスワードでログインできない**: Supabase の **Authentication** → **Providers** → **Email** で「Enable Email provider」がオンか確認。**Confirm email** をオフにすると、新規登録後すぐログインできる。
 
 以上で、開発に着手できる状態まで揃えています。
+
+---
+
+## 9. GitHub へのアップロード
+
+リポジトリは **すでにコミット済み**（ブランチ `main`）です。次だけ実行してください。
+
+1. **GitHub で新規リポジトリを作成**
+   - https://github.com/new を開く
+   - リポジトリ名（例: `AnyPick`）を入力
+   - **Add a README file** は付けない（既にローカルにあるため）
+   - Create repository をクリック
+
+2. **リモートを追加してプッシュ**（GitHub に表示されたコマンドの通り、または以下）
+
+```bash
+cd c:\Users\youta\Downloads\AnyPick
+git remote add origin https://github.com/あなたのユーザー名/リポジトリ名.git
+git push -u origin main
+```
+
+- SSH を使う場合: `git remote add origin git@github.com:あなたのユーザー名/リポジトリ名.git`
+- 認証を求められたら GitHub のユーザー名とパスワード（または Personal Access Token）を入力
+   

@@ -25,7 +25,7 @@ export default function HomePage() {
         参加者はイベントのQRからアクセス
       </p>
       <p className="text-zinc-600 text-xs mt-2 text-center max-w-xs">
-        初めての主催者も「新規登録」→ メールアドレス入力でアカウント作成されます
+        初めての主催者も「新規登録」→ メールアドレスとパスワード（8文字以上）でアカウント作成
       </p>
     </main>
   );
