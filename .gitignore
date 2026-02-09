@@ -1,0 +1,25 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Env（APIキー・Secretはコミットしない）
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Next.js
+.next/
+out/
+
+# Build
+build
+dist
+
+# Misc
+.DS_Store
+*.pem
+*.log
+npm-debug.log*
