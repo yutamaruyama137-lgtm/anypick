@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import { AdminUserMenu } from "./AdminUserMenu";
 
 export default async function AdminLayout({
   children,
@@ -17,9 +17,7 @@ export default async function AdminLayout({
             <Link href="/admin" className="font-display font-bold text-lg">
               AnyPick Admin
             </Link>
-            <span className="text-zinc-500 text-sm truncate max-w-[180px]">
-              {user.email}
-            </span>
+            <AdminUserMenu email={user.email ?? ""} />
           </div>
         </header>
       ) : null}
