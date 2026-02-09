@@ -24,6 +24,7 @@ export async function GET(
   const policy = {
     max_submissions_per_person: event.submission_max_per_person,
     allow_retake_count: event.retake_max_count,
+    max_captures: Math.max(1, event.retake_max_count), // 撮影は最大 N 回（1回目 + 撮り直し N-1 回）
     require_ticket_code: event.require_ticket_code,
   };
 

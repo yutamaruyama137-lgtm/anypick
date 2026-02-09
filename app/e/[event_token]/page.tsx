@@ -6,6 +6,8 @@ import type { EventPublic, SessionStartResponse } from "@/lib/types";
 
 type Step = "lp" | "camera" | "preview" | "confirm" | "share" | "done";
 
+const AUTO_KEEP_SEC = 30;
+
 export default function EventPage() {
   const params = useParams();
   const event_token = params.event_token as string;
@@ -14,12 +16,17 @@ export default function EventPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [alreadySubmitted, setAlreadySubmitted] = useState(false);
   const [agree, setAgree] = useState(false);
+  const [agreeSubmit, setAgreeSubmit] = useState(false);
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(null);
+  const [captureCount, setCaptureCount] = useState(0);
   const [mediaAssetId, setMediaAssetId] = useState<string | null>(null);
   const [shareCaption, setShareCaption] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState(AUTO_KEEP_SEC);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const autoKeepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchEvent = useCallback(async () => {
     const res = await fetch(`/api/public/events/${event_token}`);
@@ -104,6 +111,8 @@ export default function EventPage() {
     };
   }, [step, startCamera]);
 
+  const maxCaptures = event?.submission_policy?.max_captures ?? 3;
+
   const capture = useCallback(() => {
     if (!videoRef.current) return;
     const v = videoRef.current;
@@ -117,6 +126,7 @@ export default function EventPage() {
       (blob) => {
         if (blob) {
           setPhotoBlob(blob);
+          setCaptureCount((c) => c + 1);
           sendMetric("camera_complete");
           setStep("preview");
         }
@@ -124,15 +134,60 @@ export default function EventPage() {
       "image/jpeg",
       0.9
     );
-  }, [sendMetric]);
+  }, [sendMetric, event?.submission_policy?.max_captures]);
 
   const retake = useCallback(() => {
     setPhotoBlob(null);
     setStep("camera");
   }, []);
 
+  const goToConfirm = useCallback(() => {
+    if (autoKeepTimerRef.current) {
+      clearTimeout(autoKeepTimerRef.current);
+      autoKeepTimerRef.current = null;
+    }
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+    setStep("confirm");
+  }, []);
+
+  useEffect(() => {
+    if (step !== "preview" || !photoBlob) return;
+    setCountdown(AUTO_KEEP_SEC);
+    const tick = setInterval(() => {
+      setCountdown((s) => {
+        if (s <= 1) {
+          if (countdownIntervalRef.current) {
+            clearInterval(countdownIntervalRef.current);
+            countdownIntervalRef.current = null;
+          }
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    countdownIntervalRef.current = tick;
+    autoKeepTimerRef.current = setTimeout(() => {
+      autoKeepTimerRef.current = null;
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+      setStep("confirm");
+    }, AUTO_KEEP_SEC * 1000);
+    return () => {
+      if (autoKeepTimerRef.current) clearTimeout(autoKeepTimerRef.current);
+      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+      autoKeepTimerRef.current = null;
+      countdownIntervalRef.current = null;
+    };
+  }, [step, photoBlob]);
+
   const uploadAndSubmit = useCallback(async () => {
     if (!sessionId || !photoBlob || !event) return;
+    if (event.consent_template?.text && !agreeSubmit) return;
     setError(null);
     try {
       const form = new FormData();
@@ -171,7 +226,7 @@ export default function EventPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "エラーが発生しました");
     }
-  }, [sessionId, photoBlob, event]);
+  }, [sessionId, photoBlob, event, agreeSubmit]);
 
   const copyCaption = useCallback(async () => {
     await navigator.clipboard.writeText(shareCaption);
@@ -234,8 +289,22 @@ export default function EventPage() {
 
   if (!event) return null;
 
+  const showStickyHeader = step !== "lp";
+
   return (
     <main className="min-h-screen bg-surface-950 text-zinc-100 safe-bottom">
+      {showStickyHeader && (
+        <header className="sticky top-0 z-20 flex items-center gap-2 h-12 px-4 bg-surface-950/95 backdrop-blur border-b border-zinc-800">
+          <span className="text-lg" aria-hidden>📷</span>
+          <span className="font-medium text-white truncate">撮影</span>
+          {event.name && (
+            <span className="text-zinc-500 text-sm truncate flex-1 min-w-0" title={event.name}>
+              {event.name}
+            </span>
+          )}
+        </header>
+      )}
+
       {step === "lp" && (
         <div className="max-w-md mx-auto p-6 flex flex-col min-h-screen justify-center">
           <h1 className="font-display text-2xl font-bold text-white mb-2">
@@ -296,7 +365,10 @@ export default function EventPage() {
 
       {step === "preview" && photoBlob && (
         <div className="max-w-md mx-auto p-6 flex flex-col min-h-screen">
-          <p className="text-zinc-400 text-sm mb-4">プレビュー</p>
+          <p className="text-zinc-400 text-sm mb-2">プレビュー（{captureCount}/{maxCaptures}回目）</p>
+          {countdown > 0 && (
+            <p className="text-zinc-500 text-xs mb-2">あと {countdown} 秒で自動でKEEPします</p>
+          )}
           <div className="rounded-2xl overflow-hidden bg-black aspect-[3/4] mb-6">
             <img
               src={URL.createObjectURL(photoBlob)}
@@ -305,19 +377,58 @@ export default function EventPage() {
             />
           </div>
           <div className="flex gap-3">
+            {captureCount < maxCaptures ? (
+              <button
+                onClick={retake}
+                className="flex-1 rounded-xl border border-zinc-600 py-3"
+              >
+                撮り直す
+              </button>
+            ) : (
+              <div className="flex-1" />
+            )}
             <button
-              onClick={retake}
-              className="flex-1 rounded-xl border border-zinc-600 py-3"
-            >
-              撮り直す
-            </button>
-            <button
-              onClick={uploadAndSubmit}
+              onClick={goToConfirm}
               className="flex-1 rounded-xl bg-brand-500 py-3 px-4 font-medium text-black"
             >
-              この1枚で応募する
+              KEEP（応募確定へ）
             </button>
           </div>
+          {error && (
+            <p className="text-red-400 text-sm mt-4">{error}</p>
+          )}
+        </div>
+      )}
+
+      {step === "confirm" && photoBlob && (
+        <div className="max-w-md mx-auto p-6 flex flex-col min-h-screen">
+          <h2 className="font-display text-xl font-bold text-white mb-2">応募確定</h2>
+          <p className="text-zinc-400 text-sm mb-4">この写真で応募します。提出後は変更できません。</p>
+          <div className="rounded-2xl overflow-hidden bg-black aspect-[3/4] mb-6">
+            <img
+              src={URL.createObjectURL(photoBlob)}
+              alt="応募写真"
+              className="w-full h-full object-cover"
+            />
+          </div>
+          {event.consent_template?.text && (
+            <label className="flex items-start gap-2 mb-4 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={agreeSubmit}
+                onChange={(e) => setAgreeSubmit(e.target.checked)}
+                className="rounded border-zinc-600 mt-1"
+              />
+              <span className="text-zinc-300 text-sm">二次利用等の同意に同意する</span>
+            </label>
+          )}
+          <button
+            onClick={() => uploadAndSubmit()}
+            disabled={event.consent_template?.text ? !agreeSubmit : false}
+            className="rounded-xl bg-brand-500 py-3 px-4 font-medium text-black disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            提出する
+          </button>
           {error && (
             <p className="text-red-400 text-sm mt-4">{error}</p>
           )}

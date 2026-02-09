@@ -14,6 +14,7 @@ export interface EventPublic {
   submission_policy: {
     max_submissions_per_person: number;
     allow_retake_count: number;
+    max_captures: number; // 撮影は最大この回数（例: 3）
     require_ticket_code: boolean;
   };
 }

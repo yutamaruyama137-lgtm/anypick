@@ -2,17 +2,38 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 
+async function getOrCreateAdminUser(admin: ReturnType<typeof createServiceRoleClient>, userId: string, email: string | undefined) {
+  let { data: adminUser } = await admin
+    .from("admin_users")
+    .select("tenant_id")
+    .eq("id", userId)
+    .maybeSingle();
+  if (!adminUser && email) {
+    const { data: newTenant, error: tenantErr } = await admin
+      .from("tenants")
+      .insert({ name: email })
+      .select("id")
+      .single();
+    if (!tenantErr && newTenant) {
+      await admin.from("admin_users").insert({
+        id: userId,
+        tenant_id: newTenant.id,
+        email,
+        role: "organizer_admin",
+      });
+      adminUser = { tenant_id: newTenant.id };
+    }
+  }
+  return adminUser;
+}
+
 export async function GET() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const admin = createServiceRoleClient();
-  const { data: adminUser } = await admin
-    .from("admin_users")
-    .select("tenant_id")
-    .eq("id", user.id)
-    .single();
+  const adminUser = await getOrCreateAdminUser(admin, user.id, user.email ?? undefined);
   if (!adminUser) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { data: events, error } = await admin
@@ -31,11 +52,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const admin = createServiceRoleClient();
-  const { data: adminUser } = await admin
-    .from("admin_users")
-    .select("tenant_id")
-    .eq("id", user.id)
-    .single();
+  const adminUser = await getOrCreateAdminUser(admin, user.id, user.email ?? undefined);
   if (!adminUser) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   let body: { name: string };
