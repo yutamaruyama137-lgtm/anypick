@@ -52,8 +52,9 @@ export default function AdminLoginPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "ログインに失敗しました");
-      router.push("/admin");
-      router.refresh();
+      // フルリロードで遷移し、セッションクッキーを確実に送る（router.push だと拡張の DOM エラーで遷移しない場合あり）
+      window.location.href = "/admin";
+      return;
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "エラーが発生しました");
     } finally {
@@ -85,8 +86,8 @@ export default function AdminLoginPage() {
         setMessage("確認メールを送信しました。メール内のリンクをクリックしてからログインしてください。");
       } else {
         setMessage("登録しました。ログインしています…");
-        router.push("/admin");
-        router.refresh();
+        window.location.href = "/admin";
+        return;
       }
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "エラーが発生しました");

@@ -14,11 +14,15 @@ export async function POST(req: NextRequest) {
   if (!email) return NextResponse.json({ error: "メールアドレスを入力してください" }, { status: 400 });
   if (password.length < 8) return NextResponse.json({ error: "パスワードは8文字以上で入力してください" }, { status: 400 });
 
+  // 確認メールのリンク先は「今アクセスしているサイト」にする（本番なら本番URL、localhost なら localhost）
+  const requestUrl = new URL(req.url);
+  const redirectTo = `${requestUrl.origin}/admin/callback`;
+
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { emailRedirectTo: undefined },
+    options: { emailRedirectTo: redirectTo },
   });
 
   if (error) {

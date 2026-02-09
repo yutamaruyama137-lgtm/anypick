@@ -46,6 +46,16 @@
 3. **Confirm email** は開発時はオフ（オンの場合は新規登録後に確認メールのリンクをクリックする必要あり）
 4. これで「メール＋パスワード」での signUp / signIn が利用可能になります（マジックリンクは使っていません）
 
+**確認メールのリンクが localhost になるのを防ぐ（本番用）**
+
+1. ダッシュボード → **Authentication** → **URL Configuration**
+2. **Site URL** を本番のURLに設定する（例: `https://anypick.vercel.app`）。ここが localhost のままだと、確認メールのリンクが localhost 向けになることがあります。
+3. **Redirect URLs** に以下を追加する（複数可）:
+   - 本番: `https://あなたのドメイン.vercel.app/**`
+   - 開発用: `http://localhost:3000/**`
+
+※ アプリ側では、新規登録時に「今アクセスしているサイトの origin」を Supabase に渡しているため、本番から登録した場合は確認メールのリンクも本番URLになります。上記の Supabase 設定とあわせて行うと確実です。
+
 ### 2-5. 環境変数（手動）
 
 プロジェクトルートに **`.env.local`** を作成:
