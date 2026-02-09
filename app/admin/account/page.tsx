@@ -1,13 +1,9 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
+import { ensureAdmin } from "@/lib/admin-auth";
 
 export default async function AdminAccountPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/admin/login");
-
+  const { user } = await ensureAdmin();
   const admin = createServiceRoleClient();
   const { data: adminUser } = await admin
     .from("admin_users")

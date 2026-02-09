@@ -1,39 +1,11 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { getAppOrigin } from "@/lib/app-url";
+import { ensureAdmin } from "@/lib/admin-auth";
 
 export default async function AdminDashboardPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/admin/login");
-
+  const { adminUser } = await ensureAdmin();
   const admin = createServiceRoleClient();
-  let { data: adminUser } = await admin
-    .from("admin_users")
-    .select("tenant_id")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  // 認証済みなのに admin_users にいない場合はここで自動作成（右上にメールが出ている＝必ずダッシュボードを表示）
-  if (!adminUser && user.id && user.email) {
-    const { data: newTenant, error: tenantErr } = await admin
-      .from("tenants")
-      .insert({ name: user.email })
-      .select("id")
-      .single();
-    if (!tenantErr && newTenant) {
-      await admin.from("admin_users").insert({
-        id: user.id,
-        tenant_id: newTenant.id,
-        email: user.email,
-        role: "organizer_admin",
-      });
-      adminUser = { tenant_id: newTenant.id };
-    }
-  }
-  if (!adminUser) redirect("/admin/login");
 
   const { data: events } = await admin
     .from("events")

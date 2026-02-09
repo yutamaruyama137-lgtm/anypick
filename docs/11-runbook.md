@@ -29,6 +29,13 @@
 2. リポジトリの **`db/01-schema.sql`** の内容をコピーして実行
 3. （Supabase では `auth.users` と連携するため、後述の「初回管理者作成」で `admin_users` にレコードを入れる）
 
+**RLS（Row Level Security）の有効化（推奨）**
+
+テーブル一覧で「UNRESTRICTED」と出ているのをやめ、anon キーから守るために RLS を有効にします。
+
+1. **SQL Editor** で **`db/03-rls-policies.sql`** の内容をコピーして実行
+2. これで全テーブルで RLS がオンになり、anon/authenticated では行にアクセスできません（service_role は従来どおりアクセス可能で、アプリの挙動は変わりません）
+
 ### 2-3. Storage バケット作成（手動）
 
 1. Supabase ダッシュボード → **Storage** → **New bucket**

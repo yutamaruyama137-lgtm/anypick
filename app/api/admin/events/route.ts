@@ -1,31 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
-
-async function getOrCreateAdminUser(admin: ReturnType<typeof createServiceRoleClient>, userId: string, email: string | undefined) {
-  let { data: adminUser } = await admin
-    .from("admin_users")
-    .select("tenant_id")
-    .eq("id", userId)
-    .maybeSingle();
-  if (!adminUser && email) {
-    const { data: newTenant, error: tenantErr } = await admin
-      .from("tenants")
-      .insert({ name: email })
-      .select("id")
-      .single();
-    if (!tenantErr && newTenant) {
-      await admin.from("admin_users").insert({
-        id: userId,
-        tenant_id: newTenant.id,
-        email,
-        role: "organizer_admin",
-      });
-      adminUser = { tenant_id: newTenant.id };
-    }
-  }
-  return adminUser;
-}
+import { getOrCreateAdminUser } from "@/lib/admin-auth";
 
 export async function GET() {
   const supabase = await createClient();

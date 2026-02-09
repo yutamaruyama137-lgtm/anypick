@@ -1,9 +1,9 @@
-import { redirect, notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { getAppOrigin } from "@/lib/app-url";
 import { AdminEventTabs } from "./AdminEventTabs";
+import { ensureAdmin } from "@/lib/admin-auth";
 
 export default async function EventDetailPage({
   params,
@@ -11,13 +11,8 @@ export default async function EventDetailPage({
   params: Promise<{ eventId: string }>;
 }) {
   const { eventId } = await params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/admin/login");
-
+  const { adminUser } = await ensureAdmin();
   const admin = createServiceRoleClient();
-  const { data: adminUser } = await admin.from("admin_users").select("tenant_id").eq("id", user.id).single();
-  if (!adminUser) redirect("/admin/login");
 
   const { data: event } = await admin
     .from("events")
