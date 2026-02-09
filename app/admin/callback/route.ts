@@ -1,8 +1,10 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 
-export async function GET(req: Request) {
+type CookieOptions = Parameters<NextResponse["cookies"]["set"]>[2];
+
+export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/admin";
@@ -11,7 +13,36 @@ export async function GET(req: Request) {
     return NextResponse.redirect(new URL("/admin/login?error=no_code", req.url));
   }
 
-  const supabase = await createClient();
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anonKey) {
+    return NextResponse.redirect(new URL("/admin/login?error=exchange", req.url));
+  }
+
+  const redirectTo = new URL(next, req.url);
+  const response = NextResponse.redirect(redirectTo, 302);
+  const isSecure = req.url.startsWith("https://");
+
+  const supabase = createServerClient(url, anonKey, {
+    cookies: {
+      getAll() {
+        return req.cookies.getAll();
+      },
+      setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          const opts: CookieOptions = {
+            path: (options?.path as string) ?? "/",
+            maxAge: (options?.maxAge as number) ?? 60 * 60 * 24 * 7,
+            httpOnly: (options?.httpOnly as boolean) ?? true,
+            secure: (options?.secure as boolean) ?? isSecure,
+            sameSite: ((options?.sameSite as "lax" | "strict" | "none") || "lax") as "lax" | "strict" | "none",
+          };
+          response.cookies.set(name, value, opts);
+        });
+      },
+    },
+  });
+
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
     return NextResponse.redirect(new URL("/admin/login?error=exchange", req.url));
@@ -46,5 +77,5 @@ export async function GET(req: Request) {
     });
   }
 
-  return NextResponse.redirect(new URL(next, req.url));
+  return response;
 }

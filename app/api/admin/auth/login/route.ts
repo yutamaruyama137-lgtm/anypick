@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
   // 成功時は 302 で /admin へリダイレクト（クッキーを付与）。ブラウザがそのまま遷移するので確実
   const redirectUrl = new URL("/admin", req.url);
   const response = NextResponse.redirect(redirectUrl, 302);
+  const isSecure = req.url.startsWith("https://");
   const supabase = createServerClient(url, anonKey, {
     cookies: {
       getAll() {
@@ -42,15 +43,13 @@ export async function POST(req: NextRequest) {
       },
       setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
         cookiesToSet.forEach(({ name, value, options }) => {
-          const opts: CookieOptions = options
-            ? {
-                path: (options.path as string) ?? "/",
-                maxAge: options.maxAge as number | undefined,
-                httpOnly: options.httpOnly as boolean | undefined,
-                secure: options.secure as boolean | undefined,
-                sameSite: (options.sameSite as "lax" | "strict" | "none") || "lax",
-              }
-            : { path: "/" };
+          const opts: CookieOptions = {
+            path: (options?.path as string) ?? "/",
+            maxAge: (options?.maxAge as number) ?? 60 * 60 * 24 * 7, // 7日
+            httpOnly: (options?.httpOnly as boolean) ?? true,
+            secure: (options?.secure as boolean) ?? isSecure,
+            sameSite: ((options?.sameSite as "lax" | "strict" | "none") || "lax") as "lax" | "strict" | "none",
+          };
           response.cookies.set(name, value, opts);
         });
       },
