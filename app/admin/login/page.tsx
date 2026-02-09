@@ -196,6 +196,9 @@ export default function AdminLoginPage() {
           onSubmit={handleSubmit}
           className="space-y-4"
         >
+          {mode === "login" && searchParams.get("next") && (
+            <input type="hidden" name="next" value={searchParams.get("next") ?? ""} />
+          )}
           <div>
             <input
               type="email"

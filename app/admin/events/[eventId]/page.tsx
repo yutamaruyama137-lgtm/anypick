@@ -11,7 +11,7 @@ export default async function EventDetailPage({
   params: Promise<{ eventId: string }>;
 }) {
   const { eventId } = await params;
-  const { adminUser } = await ensureAdmin();
+  const { adminUser } = await ensureAdmin(`/admin/events/${eventId}`);
   const admin = createServiceRoleClient();
 
   const { data: event } = await admin

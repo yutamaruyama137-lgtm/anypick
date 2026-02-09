@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function NewEventPage() {
   const [name, setName] = useState("");
@@ -21,8 +22,14 @@ export default function NewEventPage() {
         credentials: "include",
       });
       const data = await res.json();
+      if (res.status === 401 || res.status === 403) {
+        // 未ログイン or 権限なし → ログインへ。戻り先を新規作成ページに
+        window.location.href = `/admin/login?next=${encodeURIComponent("/admin/events/new")}`;
+        return;
+      }
       if (!res.ok) throw new Error(data.error || "作成に失敗しました");
-      router.push(`/admin/events/${data.event.id}`);
+      // フル遷移でイベント詳細へ（クッキーを確実に送ってログイン状態で開く）
+      window.location.href = `/admin/events/${data.event.id}`;
     } catch (err) {
       setError(err instanceof Error ? err.message : "エラー");
     } finally {
@@ -32,9 +39,15 @@ export default function NewEventPage() {
 
   return (
     <main className="max-w-lg mx-auto p-6">
-      <h1 className="font-display text-2xl font-bold text-white mb-6">
+      <p className="text-zinc-500 text-sm mb-2">
+        <Link href="/admin" className="hover:text-zinc-400">← イベント一覧</Link>
+      </p>
+      <h1 className="font-display text-2xl font-bold text-white mb-2">
         新規イベント作成
       </h1>
+      <p className="text-zinc-500 text-sm mb-6">
+        未ログインの場合は作成時にログイン画面へ移動し、ログイン後はこのページに戻ります。
+      </p>
       <form onSubmit={handleSubmit} className="space-y-4">
         <label className="block text-sm text-zinc-400">イベント名</label>
         <input

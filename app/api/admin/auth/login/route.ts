@@ -7,9 +7,10 @@ type CookieOptions = Parameters<NextResponse["cookies"]["set"]>[2];
 export async function POST(req: NextRequest) {
   let email: string;
   let password: string;
+  let nextPath = "";
   const contentType = req.headers.get("content-type") ?? "";
   if (contentType.includes("application/json")) {
-    let body: { email?: string; password?: string };
+    let body: { email?: string; password?: string; next?: string };
     try {
       body = await req.json();
     } catch {
@@ -17,10 +18,12 @@ export async function POST(req: NextRequest) {
     }
     email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     password = typeof body.password === "string" ? body.password : "";
+    nextPath = typeof body.next === "string" ? body.next.trim() : "";
   } else if (contentType.includes("application/x-www-form-urlencoded") || contentType.includes("multipart/form-data")) {
     const form = await req.formData();
     email = (form.get("email") ?? "").toString().trim().toLowerCase();
     password = (form.get("password") ?? "").toString();
+    nextPath = (form.get("next") ?? "").toString().trim();
   } else {
     return NextResponse.json({ error: "Content-Type not supported" }, { status: 400 });
   }
@@ -33,8 +36,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "サーバー設定エラー" }, { status: 500 });
   }
 
-  // 成功時は 302 で /admin へリダイレクト（クッキーを付与）。ブラウザがそのまま遷移するので確実
-  const redirectUrl = new URL("/admin", req.url);
+  // 成功時は 302 でリダイレクト（next があればそのURL、なければ /admin）。クッキーを付与
+  const safeNext =
+    nextPath.startsWith("/admin") && !nextPath.startsWith("//") && !nextPath.includes("\n")
+      ? nextPath
+      : "/admin";
+  const redirectUrl = new URL(safeNext, req.url);
   const response = NextResponse.redirect(redirectUrl, 302);
   const isSecure = req.url.startsWith("https://");
   const supabase = createServerClient(url, anonKey, {
