@@ -89,16 +89,16 @@ export default function AdminLoginPage() {
   const handleSubmit = mode === "login" ? handleLoginSubmit : handleRegisterSubmit;
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-sm">
-        <div className="flex gap-2 mb-6">
+    <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-[var(--bg)]">
+      <div className="w-full max-w-sm animate-fade-in-up">
+        <div className="flex gap-1 p-1 rounded-2xl bg-[var(--surface-elevated)] border border-[var(--border)] mb-6">
           <button
             type="button"
             onClick={() => { setMode("login"); setMessage(null); }}
-            className={`flex-1 py-2 text-sm font-medium rounded-t-xl border-b-2 transition ${
+            className={`flex-1 py-2.5 text-sm font-medium rounded-xl transition-smooth ${
               mode === "login"
-                ? "border-brand-500 text-white"
-                : "border-transparent text-zinc-500 hover:text-zinc-400"
+                ? "bg-white text-black shadow-sm"
+                : "text-[var(--text-muted)] hover:text-white"
             }`}
           >
             ログイン
@@ -106,10 +106,10 @@ export default function AdminLoginPage() {
           <button
             type="button"
             onClick={() => { setMode("register"); setMessage(null); }}
-            className={`flex-1 py-2 text-sm font-medium rounded-t-xl border-b-2 transition ${
+            className={`flex-1 py-2.5 text-sm font-medium rounded-xl transition-smooth ${
               mode === "register"
-                ? "border-brand-500 text-white"
-                : "border-transparent text-zinc-500 hover:text-zinc-400"
+                ? "bg-white text-black shadow-sm"
+                : "text-[var(--text-muted)] hover:text-white"
             }`}
           >
             新規登録
@@ -119,14 +119,14 @@ export default function AdminLoginPage() {
         <h1 className="font-display text-xl font-bold text-white mb-2 text-center">
           {mode === "login" ? "主催者ログイン" : "主催者新規登録"}
         </h1>
-        <p className={`text-zinc-500 text-sm text-center ${mode === "login" ? "mb-2" : "mb-6"}`}>
+        <p className={`text-[var(--text-muted)] text-sm text-center ${mode === "login" ? "mb-2" : "mb-6"}`}>
           {mode === "login"
             ? "メールアドレスとパスワードでログイン"
             : "パスワードは8文字以上で設定してください"}
         </p>
         {mode === "login" && (
-          <p className="text-zinc-500 text-xs text-center mb-6">
-            入力して「ログイン」を押すと、<strong className="text-zinc-400">イベント一覧（ダッシュボード）</strong>が開きます。
+          <p className="text-[var(--text-dim)] text-xs text-center mb-6">
+            入力して「ログイン」を押すと、<strong className="text-[var(--text-muted)]">イベント一覧（ダッシュボード）</strong>が開きます。
           </p>
         )}
 
@@ -157,7 +157,7 @@ export default function AdminLoginPage() {
         <div className="mb-4">
           <a
             href="/api/admin/auth/google"
-            className="flex items-center justify-center gap-2 w-full rounded-xl border border-zinc-600 bg-zinc-800/50 py-3 font-medium text-white hover:bg-zinc-700/50 transition"
+            className="flex items-center justify-center gap-2 w-full rounded-2xl border border-[var(--border-light)] bg-[var(--surface-elevated)] py-3 font-medium text-white transition-smooth hover:bg-[var(--surface)] active:scale-[0.98] focus-ring"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden>
               <path
@@ -183,10 +183,10 @@ export default function AdminLoginPage() {
 
         <div className="relative mb-4">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-zinc-700" />
+            <div className="w-full border-t border-[var(--border)]" />
           </div>
           <div className="relative flex justify-center text-xs">
-            <span className="bg-surface-950 px-2 text-zinc-500">または</span>
+            <span className="bg-[var(--bg)] px-2 text-[var(--text-dim)]">または</span>
           </div>
         </div>
 
@@ -208,7 +208,7 @@ export default function AdminLoginPage() {
               placeholder="メールアドレス"
               required
               autoComplete="email"
-              className="w-full rounded-xl border border-zinc-700 bg-surface-900 px-4 py-3 text-white placeholder-zinc-500 focus:border-brand-500 focus:outline-none"
+              className="w-full rounded-2xl border border-[var(--border-light)] bg-[var(--surface)] px-4 py-3 text-white placeholder-[var(--text-dim)] transition-smooth focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/20"
             />
           </div>
           <div>
@@ -221,10 +221,10 @@ export default function AdminLoginPage() {
               required
               minLength={mode === "register" ? PASSWORD_MIN_LENGTH : undefined}
               autoComplete={mode === "login" ? "current-password" : "new-password"}
-              className="w-full rounded-xl border border-zinc-700 bg-surface-900 px-4 py-3 text-white placeholder-zinc-500 focus:border-brand-500 focus:outline-none"
+              className="w-full rounded-2xl border border-[var(--border-light)] bg-[var(--surface)] px-4 py-3 text-white placeholder-[var(--text-dim)] transition-smooth focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/20"
             />
             {mode === "register" && (
-              <p className="text-zinc-500 text-xs mt-1">8文字以上で設定してください</p>
+              <p className="text-[var(--text-dim)] text-xs mt-1">8文字以上で設定してください</p>
             )}
           </div>
           {mode === "register" && (
@@ -236,14 +236,14 @@ export default function AdminLoginPage() {
                 placeholder="パスワード（再入力）"
                 required
                 autoComplete="new-password"
-                className="w-full rounded-xl border border-zinc-700 bg-surface-900 px-4 py-3 text-white placeholder-zinc-500 focus:border-brand-500 focus:outline-none"
+                className="w-full rounded-2xl border border-[var(--border-light)] bg-[var(--surface)] px-4 py-3 text-white placeholder-[var(--text-dim)] transition-smooth focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/20"
               />
             </div>
           )}
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-brand-500 py-3 font-medium text-black disabled:opacity-50"
+            className="w-full rounded-2xl bg-white py-3 font-semibold text-black transition-smooth hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] focus-ring"
           >
             {loading
               ? "処理中…"
@@ -254,32 +254,32 @@ export default function AdminLoginPage() {
         </form>
 
         {message && (
-          <p className={`mt-4 text-sm text-center ${message.includes("しました") || message.includes("しています") ? "text-green-400" : "text-red-400"}`}>
+          <p className={`mt-4 text-sm text-center transition-smooth ${message.includes("しました") || message.includes("しています") ? "text-green-400" : "text-red-400"}`}>
             {message}
           </p>
         )}
 
         <p className="mt-6 text-center space-x-4">
-          <Link href="/admin/login/debug" className="text-zinc-500 text-sm hover:text-zinc-400">
+          <Link href="/admin/login/debug" className="text-[var(--text-muted)] text-sm transition-smooth hover:text-white">
             ログイン状態デバッグ
           </Link>
-          <Link href="/" className="text-zinc-500 text-sm hover:text-zinc-400">
+          <Link href="/" className="text-[var(--text-muted)] text-sm transition-smooth hover:text-white">
             トップへ
           </Link>
         </p>
 
         {/* Supabase 接続確認（デバッグ） */}
-        <div className="mt-8 pt-6 border-t border-zinc-800">
-          <p className="text-zinc-600 text-xs mb-2">Supabase 接続確認</p>
+        <div className="mt-8 pt-6 border-t border-[var(--border)]">
+          <p className="text-[var(--text-dim)] text-xs mb-2">Supabase 接続確認</p>
           {debug === null ? (
-            <p className="text-zinc-500 text-xs">確認中…</p>
+            <p className="text-[var(--text-dim)] text-xs">確認中…</p>
           ) : (
             <div className="text-xs space-y-1">
               <p className={debug.ok ? "text-green-400" : "text-red-400"}>
                 {debug.message}
               </p>
               {debug.env && (
-                <p className="text-zinc-500">
+                <p className="text-[var(--text-dim)]">
                   URL: {debug.env.url ? "✓" : "✗"} / anon: {debug.env.anonKey ? "✓" : "✗"} / service_role: {debug.env.serviceRoleKey ? "✓" : "✗"}
                 </p>
               )}
@@ -287,7 +287,7 @@ export default function AdminLoginPage() {
                 <p className="text-amber-400 break-all">{debug.error}</p>
               )}
               {debug.hint && (
-                <p className="text-zinc-500 italic">{debug.hint}</p>
+                <p className="text-[var(--text-dim)] italic">{debug.hint}</p>
               )}
             </div>
           )}

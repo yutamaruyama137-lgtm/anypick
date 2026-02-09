@@ -1,9 +1,29 @@
 import { notFound } from "next/navigation";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { getAppOrigin } from "@/lib/app-url";
-import { AdminEventTabs } from "./AdminEventTabs";
 import { ensureAdmin } from "@/lib/admin-auth";
+
+const AdminEventTabs = dynamic(() => import("./AdminEventTabs").then((m) => ({ default: m.AdminEventTabs })), {
+  loading: () => (
+    <div className="animate-fade-in">
+      <div className="flex gap-1 p-1 rounded-2xl bg-[var(--surface)] border border-[var(--border)] mb-6 w-fit max-w-full">
+        {["分析", "フレーム", "QR", "応募一覧", "設定"].map((label) => (
+          <span key={label} className="px-4 py-2 text-sm text-[var(--text-muted)]">
+            {label}
+          </span>
+        ))}
+      </div>
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
+        <div className="h-32 flex items-center justify-center text-[var(--text-muted)] text-sm">
+          読み込み中…
+        </div>
+      </div>
+    </div>
+  ),
+  ssr: false,
+});
 
 export default async function EventDetailPage({
   params,
@@ -32,7 +52,7 @@ export default async function EventDetailPage({
       return (
         <main className="max-w-lg mx-auto p-6">
           <p className="text-amber-400 mb-4">このイベントにアクセスする権限がありません。</p>
-          <Link href="/admin" className="text-brand-500 hover:underline">
+          <Link href="/admin" className="text-white font-medium transition-smooth hover:opacity-80 focus-ring rounded-lg inline-block">
             ← イベント一覧へ
           </Link>
         </main>
@@ -47,7 +67,7 @@ export default async function EventDetailPage({
   return (
     <main className="max-w-6xl mx-auto p-6">
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/admin" className="text-zinc-500 hover:text-zinc-400 text-sm">
+        <Link href="/admin" className="text-[var(--text-muted)] text-sm transition-smooth hover:text-white focus-ring rounded-lg py-1">
           ← 一覧
         </Link>
       </div>
@@ -56,7 +76,7 @@ export default async function EventDetailPage({
           <h1 className="font-display text-2xl font-bold text-white">
             {event.name}
           </h1>
-          <p className="text-zinc-500 text-sm mt-1 break-all">
+          <p className="text-[var(--text-muted)] text-sm mt-1 break-all">
             参加者URL: {participantUrl}
           </p>
         </div>
@@ -64,7 +84,7 @@ export default async function EventDetailPage({
           href={participantUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-xl border border-zinc-600 px-4 py-2 text-sm hover:bg-surface-850"
+          className="rounded-2xl border border-[var(--border-light)] px-4 py-2 text-sm font-medium transition-smooth hover:bg-[var(--surface-elevated)] active:scale-[0.98] focus-ring"
         >
           プレビュー
         </a>

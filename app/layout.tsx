@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Syne } from "next/font/google";
+import { Outfit } from "next/font/google";
 import "./globals.css";
 
-const syne = Syne({
+const outfit = Outfit({
   subsets: ["latin"],
-  variable: "--font-display",
+  variable: "--font-sans",
   display: "swap",
 });
 
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0c",
+  themeColor: "#050507",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -27,13 +27,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja" className={syne.variable}>
+    <html lang="ja" className={outfit.variable}>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body className="min-h-screen antialiased font-sans bg-surface-950 text-zinc-100">
+      <body className="min-h-screen antialiased font-sans bg-[var(--bg)] text-[var(--text)]">
         {children}
       </body>
     </html>

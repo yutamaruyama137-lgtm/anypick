@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import QRCode from "qrcode";
 
 type Tab = "analytics" | "frames" | "qr" | "submissions" | "settings";
 
@@ -91,11 +90,14 @@ export function AdminEventTabs({
     }
   }, [active, eventId]);
 
+  // QRタブを開いたときだけ qrcode を動的読み込み（初期バンドル軽量化）
   useEffect(() => {
     if (active === "qr" && participantUrl) {
-      QRCode.toDataURL(participantUrl, { width: 280, margin: 2 })
-        .then(setQrDataUrl)
-        .catch(() => setQrDataUrl(null));
+      import("qrcode").then((QRCode) => {
+        QRCode.default.toDataURL(participantUrl, { width: 280, margin: 2 })
+          .then(setQrDataUrl)
+          .catch(() => setQrDataUrl(null));
+      });
     } else {
       setQrDataUrl(null);
     }
@@ -103,15 +105,15 @@ export function AdminEventTabs({
 
   return (
     <div>
-      <div className="flex gap-2 border-b border-zinc-800 mb-6 overflow-x-auto">
+      <div className="flex gap-1 p-1 rounded-2xl bg-[var(--surface)] border border-[var(--border)] mb-6 overflow-x-auto w-fit max-w-full">
         {tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => setActive(t.id)}
-            className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition ${
+            className={`px-4 py-2 text-sm font-medium whitespace-nowrap rounded-xl transition-smooth ${
               active === t.id
-                ? "border-brand-500 text-white"
-                : "border-transparent text-zinc-500 hover:text-zinc-400"
+                ? "bg-white text-black"
+                : "text-[var(--text-muted)] hover:text-white"
             }`}
           >
             {t.label}
@@ -120,21 +122,21 @@ export function AdminEventTabs({
       </div>
 
       {active === "analytics" && (
-        <div className="rounded-2xl border border-zinc-800 bg-surface-900/50 p-6">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 animate-fade-in">
           {analytics?.summary ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <StatCard label="Scan" value={analytics.summary.scan} />
               <StatCard label="撮影完了" value={analytics.summary.camera_complete} />
               <StatCard label="保存" value={analytics.summary.save_click} />
               <StatCard label="応募完了" value={analytics.summary.submit_complete} />
-              <div className="col-span-2 sm:col-span-1 rounded-xl bg-surface-850 p-4">
-                <p className="text-zinc-500 text-sm">同意率</p>
+              <div className="col-span-2 sm:col-span-1 rounded-xl bg-[var(--surface-elevated)] p-4">
+                <p className="text-[var(--text-muted)] text-sm">同意率</p>
                 <p className="text-2xl font-bold text-white mt-1">
                   {(analytics.summary.consent_agree_rate * 100).toFixed(1)}%
                 </p>
               </div>
-              <div className="col-span-2 rounded-xl bg-surface-850 p-4">
-                <p className="text-zinc-500 text-sm">外部遷移</p>
+              <div className="col-span-2 rounded-xl bg-[var(--surface-elevated)] p-4">
+                <p className="text-[var(--text-muted)] text-sm">外部遷移</p>
                 <p className="text-lg font-medium text-white mt-1">
                   instagram: {analytics.summary.outbound_click?.instagram ?? 0} / x:{" "}
                   {analytics.summary.outbound_click?.x ?? 0}
@@ -142,30 +144,30 @@ export function AdminEventTabs({
               </div>
             </div>
           ) : (
-            <p className="text-zinc-500">読み込み中…</p>
+            <p className="text-[var(--text-muted)]">読み込み中…</p>
           )}
         </div>
       )}
 
       {active === "frames" && (
-        <div className="rounded-2xl border border-zinc-800 bg-surface-900/50 p-6">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 animate-fade-in">
           <FrameUpload eventId={eventId} onUploaded={refetch} />
           <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-4">
             {frames.length === 0 && !analytics ? (
-              <p className="text-zinc-500 col-span-full">読み込み中…</p>
+              <p className="text-[var(--text-muted)] col-span-full">読み込み中…</p>
             ) : frames.length === 0 ? (
-              <p className="text-zinc-500 col-span-full">フレームがありません。アップロードしてください。</p>
+              <p className="text-[var(--text-muted)] col-span-full">フレームがありません。アップロードしてください。</p>
             ) : (
               frames.map((f) => (
-                <div key={f.id} className="rounded-xl border border-zinc-800 overflow-hidden">
+                <div key={f.id} className="rounded-xl border border-[var(--border)] overflow-hidden">
                   {f.image_url ? (
                     <img src={f.image_url} alt="" className="w-full aspect-square object-cover" />
                   ) : (
-                    <div className="w-full aspect-square bg-surface-850 flex items-center justify-center text-zinc-500">
+                    <div className="w-full aspect-square bg-[var(--surface-elevated)] flex items-center justify-center text-[var(--text-dim)]">
                       No image
                     </div>
                   )}
-                  <p className="p-2 text-xs text-zinc-500">{f.is_active ? "表示中" : "非表示"}</p>
+                  <p className="p-2 text-xs text-[var(--text-muted)]">{f.is_active ? "表示中" : "非表示"}</p>
                 </div>
               ))
             )}
@@ -174,9 +176,8 @@ export function AdminEventTabs({
       )}
 
       {active === "qr" && (
-        <div className="rounded-2xl border border-zinc-800 bg-surface-900/50 p-6">
-          {/* 参加者用QRコード（読み取るとイベント参加・写真投稿へ） */}
-          <div className="mb-8 p-6 rounded-xl bg-white inline-block">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 animate-fade-in">
+          <div className="mb-8 p-6 rounded-2xl bg-white inline-block">
             <p className="text-zinc-800 text-sm font-medium mb-3">参加者用QRコード</p>
             <p className="text-zinc-600 text-xs mb-4 max-w-xs">読み取るとこのイベントの参加ページが開き、写真の撮影・応募ができます</p>
             {qrDataUrl ? (
@@ -186,31 +187,31 @@ export function AdminEventTabs({
                   alt="参加者用QRコード（読み取ってイベントに参加）"
                   width={280}
                   height={280}
-                  className="rounded-lg"
+                  className="rounded-xl"
                 />
                 <a
                   href={qrDataUrl}
                   download={`anypick-${event.name.replace(/\s/g, "-")}-qr.png`}
-                  className="rounded-lg bg-zinc-800 text-white px-4 py-2 text-sm font-medium hover:bg-zinc-700"
+                  className="rounded-xl bg-black text-white px-4 py-2 text-sm font-medium transition-smooth hover:bg-zinc-800 active:scale-[0.98]"
                 >
                   QRコードをダウンロード
                 </a>
               </div>
             ) : (
-              <p className="text-zinc-500 text-sm">生成中…</p>
+              <p className="text-[var(--text-muted)] text-sm">生成中…</p>
             )}
           </div>
 
-          <p className="text-zinc-500 text-sm mb-3">入口別QR（集計用・任意）</p>
+          <p className="text-[var(--text-muted)] text-sm mb-3">入口別QR（集計用・任意）</p>
           <QrCreate eventId={eventId} onCreated={refetch} />
           <ul className="mt-6 space-y-3">
             {qrSources.length === 0 && active === "qr" ? (
-              <li className="text-zinc-500">QRソースがありません。追加すると入口別集計ができます。</li>
+              <li className="text-[var(--text-muted)]">QRソースがありません。追加すると入口別集計ができます。</li>
             ) : (
               qrSources.map((q) => (
-                <li key={q.id} className="flex items-center justify-between rounded-xl border border-zinc-800 p-3">
+                <li key={q.id} className="flex items-center justify-between rounded-xl border border-[var(--border)] p-3">
                   <span className="font-mono text-sm">{q.code}</span>
-                  {q.label && <span className="text-zinc-500 text-sm">{q.label}</span>}
+                  {q.label && <span className="text-[var(--text-muted)] text-sm">{q.label}</span>}
                 </li>
               ))
             )}
@@ -219,29 +220,29 @@ export function AdminEventTabs({
       )}
 
       {active === "submissions" && (
-        <div className="rounded-2xl border border-zinc-800 bg-surface-900/50 p-6">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 animate-fade-in">
           <div className="flex gap-2 mb-4">
             <Link
               href={`/admin/events/${eventId}/submissions?consent=agree_reuse`}
-              className="rounded-lg border border-zinc-600 px-3 py-1 text-sm"
+              className="rounded-xl border border-[var(--border-light)] px-3 py-1.5 text-sm transition-smooth hover:bg-[var(--surface-elevated)]"
             >
               同意ありのみ
             </Link>
           </div>
           {submissions.length === 0 && active === "submissions" ? (
-            <p className="text-zinc-500">応募がありません。</p>
+            <p className="text-[var(--text-muted)]">応募がありません。</p>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {submissions.map((s) => (
-                <div key={s.id} className="rounded-xl border border-zinc-800 overflow-hidden">
+                <div key={s.id} className="rounded-xl border border-[var(--border)] overflow-hidden">
                   {s.image_url ? (
-                    <a href={s.image_url} target="_blank" rel="noopener noreferrer">
+                    <a href={s.image_url} target="_blank" rel="noopener noreferrer" className="block transition-smooth hover:opacity-90">
                       <img src={s.image_url} alt="" className="w-full aspect-square object-cover" />
                     </a>
                   ) : (
-                    <div className="w-full aspect-square bg-surface-850" />
+                    <div className="w-full aspect-square bg-[var(--surface-elevated)]" />
                   )}
-                  <p className="p-2 text-xs text-zinc-500">
+                  <p className="p-2 text-xs text-[var(--text-muted)]">
                     {s.consent_agree_reuse ? "同意あり" : "同意なし"} ·{" "}
                     {new Date(s.created_at).toLocaleString("ja-JP")}
                   </p>
@@ -253,13 +254,13 @@ export function AdminEventTabs({
       )}
 
       {active === "settings" && (
-        <div className="rounded-2xl border border-zinc-800 bg-surface-900/50 p-6 max-w-xl">
-          <p className="text-zinc-500 text-sm mb-2">イベント名</p>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 max-w-xl animate-fade-in">
+          <p className="text-[var(--text-muted)] text-sm mb-2">イベント名</p>
           <p className="text-white font-medium">{event.name}</p>
-          <p className="text-zinc-500 text-sm mt-4">ステータス</p>
+          <p className="text-[var(--text-muted)] text-sm mt-4">ステータス</p>
           <p className="text-white">{event.status ?? "active"}</p>
-          <p className="text-zinc-500 text-sm mt-4">ルール文言</p>
-          <p className="text-zinc-300 text-sm whitespace-pre-wrap mt-1">
+          <p className="text-[var(--text-muted)] text-sm mt-4">ルール文言</p>
+          <p className="text-[var(--text-muted)] text-sm whitespace-pre-wrap mt-1">
             {event.rules_text || "（未設定）"}
           </p>
         </div>
@@ -270,8 +271,8 @@ export function AdminEventTabs({
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl bg-surface-850 p-4">
-      <p className="text-zinc-500 text-sm">{label}</p>
+    <div className="rounded-xl bg-[var(--surface-elevated)] p-4">
+      <p className="text-[var(--text-muted)] text-sm">{label}</p>
       <p className="text-2xl font-bold text-white mt-1">{value}</p>
     </div>
   );
@@ -308,7 +309,7 @@ function FrameUpload({ eventId, onUploaded }: { eventId: string; onUploaded: () 
 
   return (
     <div>
-      <label className="inline-block rounded-xl border border-zinc-600 px-4 py-2 text-sm cursor-pointer hover:bg-surface-850">
+      <label className="inline-block rounded-2xl border border-[var(--border-light)] px-4 py-2.5 text-sm cursor-pointer transition-smooth hover:bg-[var(--surface-elevated)]">
         <input type="file" accept="image/*" className="hidden" onChange={handleFile} disabled={loading} />
         {loading ? "アップロード中…" : "フレームをアップロード"}
       </label>
@@ -344,12 +345,12 @@ function QrCreate({ eventId, onCreated }: { eventId: string; onCreated: () => vo
         value={code}
         onChange={(e) => setCode(e.target.value)}
         placeholder="code (例: gateA)"
-        className="rounded-lg border border-zinc-700 bg-surface-900 px-3 py-2 text-sm w-32"
+        className="rounded-xl border border-[var(--border-light)] bg-[var(--surface-elevated)] px-3 py-2 text-sm w-32 text-white placeholder-[var(--text-dim)] focus:outline-none focus:ring-2 focus:ring-white/20"
       />
       <button
         onClick={create}
         disabled={loading}
-        className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-black disabled:opacity-50"
+        className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition-smooth hover:bg-zinc-200 disabled:opacity-50 active:scale-[0.98]"
       >
         追加
       </button>

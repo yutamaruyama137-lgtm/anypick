@@ -3,12 +3,15 @@
 @tailwind utilities;
 
 :root {
-  --font-display: "Syne", system-ui, sans-serif;
-  --bg: #0a0a0c;
-  --surface: #121216;
-  --border: #27272a;
+  --bg: #050507;
+  --surface: #0f0f12;
+  --surface-elevated: #141418;
+  --border: #1c1c1e;
+  --border-light: #27272a;
   --text: #fafafa;
-  --muted: #a1a1aa;
+  --text-muted: #8b8b8f;
+  --text-dim: #52525a;
+  --accent: #ffffff;
   --brand: #22c55e;
 }
 
@@ -18,12 +21,44 @@
 
 html {
   -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 body {
   background: var(--bg);
   color: var(--text);
   min-height: 100dvh;
+}
+
+/* 共通: ボタン・リンクのタップフィードバック（無駄のないトランジション） */
+@layer utilities {
+  .transition-smooth {
+    transition-property: color, background-color, border-color, opacity, transform, box-shadow;
+    transition-duration: 220ms;
+    transition-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+  .transition-fast {
+    transition-duration: 150ms;
+  }
+  .focus-ring {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-black;
+  }
+  .btn-active {
+    @apply active:scale-[0.98] transition-transform duration-fast ease-out;
+  }
 }
 
 /* PWA safe area */

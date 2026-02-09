@@ -23,11 +23,11 @@ export default async function AdminDashboardPage({
   return (
     <main className="max-w-6xl mx-auto p-6">
       {createdId && (
-        <div className="mb-6 rounded-xl bg-green-500/20 border border-green-500/50 px-4 py-3 flex items-center justify-between gap-4">
+        <div className="mb-6 rounded-2xl bg-green-500/15 border border-green-500/40 px-4 py-3 flex items-center justify-between gap-4 animate-fade-in-up">
           <p className="text-green-400 text-sm">イベントを作成しました。</p>
           <Link
             href={`/admin/events/${createdId}`}
-            className="rounded-lg bg-green-500 px-3 py-1.5 text-sm font-medium text-black hover:bg-green-400"
+            className="rounded-xl bg-green-500 px-3 py-1.5 text-sm font-medium text-black transition-smooth hover:bg-green-400 active:scale-[0.98]"
           >
             作成したイベントを開く
           </Link>
@@ -39,13 +39,13 @@ export default async function AdminDashboardPage({
         </h1>
         <Link
           href="/admin/events/new"
-          className="rounded-xl bg-brand-500 px-4 py-2 font-medium text-black"
+          className="rounded-2xl bg-white px-5 py-2.5 font-semibold text-black transition-smooth hover:bg-zinc-200 active:scale-[0.98] focus-ring"
         >
           新規イベント
         </Link>
       </div>
       {!events?.length ? (
-        <div className="rounded-2xl border border-zinc-800 bg-surface-900/50 p-12 text-center text-zinc-500">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-12 text-center text-[var(--text-muted)]">
           イベントがありません。新規作成から始めましょう。
         </div>
       ) : (
@@ -54,20 +54,20 @@ export default async function AdminDashboardPage({
             <li key={ev.id}>
               <Link
                 href={`/admin/events/${ev.id}`}
-                className="block rounded-xl border border-zinc-800 bg-surface-900/50 p-4 hover:border-zinc-700 transition"
+                className="block rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 transition-smooth hover:border-[var(--border-light)] hover:bg-[var(--surface-elevated)] active:scale-[0.998]"
               >
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium text-white">{ev.name}</p>
-                    <p className="text-zinc-500 text-sm mt-1">
+                    <p className="text-[var(--text-muted)] text-sm mt-1">
                       /e/{ev.event_token} · {ev.status}
                     </p>
                   </div>
-                  <span className="text-zinc-500 text-sm">
+                  <span className="text-[var(--text-muted)] text-sm">
                     {new Date(ev.created_at).toLocaleDateString("ja-JP")}
                   </span>
                 </div>
-                <p className="text-zinc-600 text-xs mt-2 break-all">
+                <p className="text-[var(--text-dim)] text-xs mt-2 break-all">
                   参加者URL: {origin}/e/{ev.event_token}
                 </p>
               </Link>

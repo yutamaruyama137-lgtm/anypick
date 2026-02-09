@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import type { EventPublic, SessionStartResponse } from "@/lib/types";
 
@@ -267,19 +267,19 @@ export default function EventPage() {
 
   if (!event && !error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface-950">
-        <div className="animate-pulse text-zinc-500">読み込み中…</div>
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
+        <div className="animate-pulse text-[var(--text-muted)] text-sm">読み込み中…</div>
       </div>
     );
   }
 
   if (error && !event) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-surface-950">
-        <p className="text-red-400 mb-4">{error}</p>
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[var(--bg)] animate-fade-in">
+        <p className="text-red-400 mb-4 text-center">{error}</p>
         <button
           onClick={() => window.location.reload()}
-          className="rounded-xl bg-zinc-700 px-4 py-2 text-sm"
+          className="rounded-2xl border border-[var(--border-light)] px-4 py-2.5 text-sm font-medium transition-smooth hover:bg-[var(--surface-elevated)] active:scale-[0.98]"
         >
           再試行
         </button>
@@ -291,14 +291,25 @@ export default function EventPage() {
 
   const showStickyHeader = step !== "lp";
 
+  // プレビュー/確認で1枚だけオブジェクトURLを生成し、ステップ離脱時にrevokeしてメモリリーク防止
+  const photoObjectUrl = useMemo(
+    () => (photoBlob ? URL.createObjectURL(photoBlob) : null),
+    [photoBlob]
+  );
+  useEffect(() => {
+    return () => {
+      if (photoObjectUrl) URL.revokeObjectURL(photoObjectUrl);
+    };
+  }, [photoObjectUrl]);
+
   return (
-    <main className="min-h-screen bg-surface-950 text-zinc-100 safe-bottom">
+    <main className="min-h-screen bg-[var(--bg)] text-white safe-bottom">
       {showStickyHeader && (
-        <header className="sticky top-0 z-20 flex items-center gap-2 h-12 px-4 bg-surface-950/95 backdrop-blur border-b border-zinc-800">
+        <header className="sticky top-0 z-20 flex items-center gap-2 h-12 px-4 bg-[var(--bg)]/95 backdrop-blur-md border-b border-[var(--border)] transition-smooth">
           <span className="text-lg" aria-hidden>📷</span>
           <span className="font-medium text-white truncate">撮影</span>
           {event.name && (
-            <span className="text-zinc-500 text-sm truncate flex-1 min-w-0" title={event.name}>
+            <span className="text-[var(--text-muted)] text-sm truncate flex-1 min-w-0" title={event.name}>
               {event.name}
             </span>
           )}
@@ -306,16 +317,16 @@ export default function EventPage() {
       )}
 
       {step === "lp" && (
-        <div className="max-w-md mx-auto p-6 flex flex-col min-h-screen justify-center">
+        <div key="lp" className="max-w-md mx-auto p-6 flex flex-col min-h-screen justify-center animate-fade-in-up">
           <h1 className="font-display text-2xl font-bold text-white mb-2">
             {event.name}
           </h1>
-          <p className="text-zinc-400 text-sm mb-6 whitespace-pre-wrap">
+          <p className="text-[var(--text-muted)] text-sm mb-6 whitespace-pre-wrap">
             {event.rules_text || "写真を撮って応募しよう！"}
           </p>
           {event.consent_template?.text && (
-            <div className="rounded-xl bg-surface-850 border border-zinc-800 p-4 mb-6">
-              <p className="text-zinc-300 text-sm whitespace-pre-wrap">
+            <div className="rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-4 mb-6">
+              <p className="text-[var(--text-muted)] text-sm whitespace-pre-wrap">
                 {event.consent_template.text}
               </p>
               <label className="mt-4 flex items-center gap-2 cursor-pointer">
@@ -323,7 +334,7 @@ export default function EventPage() {
                   type="checkbox"
                   checked={agree}
                   onChange={(e) => setAgree(e.target.checked)}
-                  className="rounded border-zinc-600"
+                  className="rounded border-[var(--border-light)] bg-[var(--surface-elevated)]"
                 />
                 <span className="text-sm">上記に同意する</span>
               </label>
@@ -332,7 +343,7 @@ export default function EventPage() {
           <button
             onClick={handleAgree}
             disabled={!agree}
-            className="rounded-xl bg-brand-500 py-3 px-6 font-medium text-black disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-2xl bg-white py-3.5 px-6 font-semibold text-black transition-smooth hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
           >
             同意して撮影を始める
           </button>
@@ -340,7 +351,7 @@ export default function EventPage() {
       )}
 
       {step === "camera" && (
-        <div className="flex flex-col h-dvh">
+        <div key="camera" className="flex flex-col h-dvh animate-fade-in">
           <div className="flex-1 relative bg-black">
             <video
               ref={videoRef}
@@ -353,10 +364,10 @@ export default function EventPage() {
           {error && (
             <p className="text-red-400 text-center py-2 text-sm">{error}</p>
           )}
-          <div className="p-4 safe-bottom bg-surface-900 flex justify-center">
+          <div className="p-4 safe-bottom bg-[var(--bg)] flex justify-center">
             <button
               onClick={capture}
-              className="w-16 h-16 rounded-full bg-white border-4 border-zinc-400"
+              className="w-16 h-16 rounded-full bg-white border-4 border-white/30 shadow-[0_0_0_2px_rgba(0,0,0,0.2)] transition-smooth hover:scale-105 active:scale-95"
               aria-label="撮影"
             />
           </div>
@@ -364,23 +375,25 @@ export default function EventPage() {
       )}
 
       {step === "preview" && photoBlob && (
-        <div className="max-w-md mx-auto p-6 flex flex-col min-h-screen">
-          <p className="text-zinc-400 text-sm mb-2">プレビュー（{captureCount}/{maxCaptures}回目）</p>
+        <div key="preview" className="max-w-md mx-auto p-6 flex flex-col min-h-screen animate-fade-in-up">
+          <p className="text-[var(--text-muted)] text-sm mb-2">プレビュー（{captureCount}/{maxCaptures}回目）</p>
           {countdown > 0 && (
-            <p className="text-zinc-500 text-xs mb-2">あと {countdown} 秒で自動でKEEPします</p>
+            <p className="text-[var(--text-dim)] text-xs mb-2">あと {countdown} 秒で自動でKEEPします</p>
           )}
           <div className="rounded-2xl overflow-hidden bg-black aspect-[3/4] mb-6">
-            <img
-              src={URL.createObjectURL(photoBlob)}
-              alt="プレビュー"
-              className="w-full h-full object-cover"
-            />
+            {photoObjectUrl && (
+              <img
+                src={photoObjectUrl}
+                alt="プレビュー"
+                className="w-full h-full object-cover"
+              />
+            )}
           </div>
           <div className="flex gap-3">
             {captureCount < maxCaptures ? (
               <button
                 onClick={retake}
-                className="flex-1 rounded-xl border border-zinc-600 py-3"
+                className="flex-1 rounded-2xl border border-[var(--border-light)] py-3 font-medium transition-smooth hover:bg-[var(--surface-elevated)] active:scale-[0.98]"
               >
                 撮り直す
               </button>
@@ -389,7 +402,7 @@ export default function EventPage() {
             )}
             <button
               onClick={goToConfirm}
-              className="flex-1 rounded-xl bg-brand-500 py-3 px-4 font-medium text-black"
+              className="flex-1 rounded-2xl bg-white py-3 px-4 font-semibold text-black transition-smooth hover:bg-zinc-200 active:scale-[0.98]"
             >
               KEEP（応募確定へ）
             </button>
@@ -401,15 +414,17 @@ export default function EventPage() {
       )}
 
       {step === "confirm" && photoBlob && (
-        <div className="max-w-md mx-auto p-6 flex flex-col min-h-screen">
+        <div key="confirm" className="max-w-md mx-auto p-6 flex flex-col min-h-screen animate-fade-in-up">
           <h2 className="font-display text-xl font-bold text-white mb-2">応募確定</h2>
-          <p className="text-zinc-400 text-sm mb-4">この写真で応募します。提出後は変更できません。</p>
+          <p className="text-[var(--text-muted)] text-sm mb-4">この写真で応募します。提出後は変更できません。</p>
           <div className="rounded-2xl overflow-hidden bg-black aspect-[3/4] mb-6">
-            <img
-              src={URL.createObjectURL(photoBlob)}
-              alt="応募写真"
-              className="w-full h-full object-cover"
-            />
+            {photoObjectUrl && (
+              <img
+                src={photoObjectUrl}
+                alt="応募写真"
+                className="w-full h-full object-cover"
+              />
+            )}
           </div>
           {event.consent_template?.text && (
             <label className="flex items-start gap-2 mb-4 cursor-pointer">
@@ -417,15 +432,15 @@ export default function EventPage() {
                 type="checkbox"
                 checked={agreeSubmit}
                 onChange={(e) => setAgreeSubmit(e.target.checked)}
-                className="rounded border-zinc-600 mt-1"
+                className="rounded border-[var(--border-light)] bg-[var(--surface-elevated)] mt-1"
               />
-              <span className="text-zinc-300 text-sm">二次利用等の同意に同意する</span>
+              <span className="text-[var(--text-muted)] text-sm">二次利用等の同意に同意する</span>
             </label>
           )}
           <button
             onClick={() => uploadAndSubmit()}
             disabled={event.consent_template?.text ? !agreeSubmit : false}
-            className="rounded-xl bg-brand-500 py-3 px-4 font-medium text-black disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-2xl bg-white py-3.5 px-4 font-semibold text-black transition-smooth hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
           >
             提出する
           </button>
@@ -436,21 +451,21 @@ export default function EventPage() {
       )}
 
       {step === "share" && (
-        <div className="max-w-md mx-auto p-6 flex flex-col min-h-screen justify-center">
+        <div key="share" className="max-w-md mx-auto p-6 flex flex-col min-h-screen justify-center animate-fade-in-up">
           <h2 className="font-display text-xl font-bold text-white mb-2">
             応募完了！
           </h2>
-          <p className="text-zinc-400 text-sm mb-6">
+          <p className="text-[var(--text-muted)] text-sm mb-6">
             キャプションをコピーしてSNSでシェアしよう
           </p>
-          <div className="rounded-xl bg-surface-850 border border-zinc-800 p-4 mb-4">
-            <p className="text-zinc-300 text-sm whitespace-pre-wrap break-all">
+          <div className="rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-4 mb-4">
+            <p className="text-[var(--text-muted)] text-sm whitespace-pre-wrap break-all">
               {shareCaption}
             </p>
           </div>
           <button
             onClick={copyCaption}
-            className="rounded-xl bg-zinc-700 py-3 mb-3 w-full"
+            className="rounded-2xl bg-[var(--surface-elevated)] py-3 mb-3 w-full font-medium transition-smooth hover:bg-[var(--surface)] active:scale-[0.98] border border-[var(--border)]"
           >
             キャプションをコピー
           </button>
@@ -458,7 +473,7 @@ export default function EventPage() {
             {event.share_targets?.includes("instagram") && (
               <button
                 onClick={() => openOutbound("instagram")}
-                className="flex-1 rounded-xl bg-pink-600/80 py-3"
+                className="flex-1 rounded-2xl bg-pink-600/90 py-3 font-medium transition-smooth hover:bg-pink-600 active:scale-[0.98]"
               >
                 Instagram
               </button>
@@ -466,7 +481,7 @@ export default function EventPage() {
             {(event.share_targets?.includes("x") || event.share_targets?.includes("twitter")) && (
               <button
                 onClick={() => openOutbound("x")}
-                className="flex-1 rounded-xl bg-zinc-800 py-3"
+                className="flex-1 rounded-2xl bg-[var(--surface-elevated)] border border-[var(--border-light)] py-3 font-medium transition-smooth hover:bg-[var(--surface)] active:scale-[0.98]"
               >
                 X
               </button>
@@ -474,7 +489,7 @@ export default function EventPage() {
           </div>
           <button
             onClick={() => setStep("done")}
-            className="mt-8 text-zinc-500 text-sm"
+            className="mt-8 text-[var(--text-muted)] text-sm transition-smooth hover:text-white"
           >
             閉じる
           </button>
@@ -482,11 +497,11 @@ export default function EventPage() {
       )}
 
       {step === "done" && (
-        <div className="max-w-md mx-auto p-6 flex flex-col min-h-screen justify-center">
+        <div key="done" className="max-w-md mx-auto p-6 flex flex-col min-h-screen justify-center animate-fade-in-up">
           <h2 className="font-display text-xl font-bold text-white mb-2">
             {alreadySubmitted ? "提出済みです" : "ありがとうございました"}
           </h2>
-          <p className="text-zinc-400 text-sm">
+          <p className="text-[var(--text-muted)] text-sm">
             {alreadySubmitted
               ? "このイベントにはすでに応募済みです。"
               : "またのご参加をお待ちしています。"}
