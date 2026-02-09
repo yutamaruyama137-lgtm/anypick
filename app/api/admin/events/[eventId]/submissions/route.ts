@@ -1,21 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
-
-async function getTenantId(supabaseAuth: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user } } = await supabaseAuth.auth.getUser();
-  if (!user) return null;
-  const admin = createServiceRoleClient();
-  const { data: au } = await admin.from("admin_users").select("tenant_id").eq("id", user.id).single();
-  return au?.tenant_id ?? null;
-}
+import { getAdminTenantId } from "@/lib/admin-auth";
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ eventId: string }> }
 ) {
-  const supabase = await createClient();
-  const tenant_id = await getTenantId(supabase);
+  const tenant_id = await getAdminTenantId();
   if (!tenant_id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { eventId } = await params;

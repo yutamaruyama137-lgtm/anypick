@@ -3,7 +3,11 @@ import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { getAppOrigin } from "@/lib/app-url";
 import { ensureAdmin } from "@/lib/admin-auth";
 
-export default async function AdminDashboardPage() {
+export default async function AdminDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ created?: string }>;
+}) {
   const { adminUser } = await ensureAdmin();
   const admin = createServiceRoleClient();
 
@@ -14,9 +18,21 @@ export default async function AdminDashboardPage() {
     .order("created_at", { ascending: false });
 
   const origin = getAppOrigin();
+  const createdId = (await searchParams).created;
 
   return (
     <main className="max-w-6xl mx-auto p-6">
+      {createdId && (
+        <div className="mb-6 rounded-xl bg-green-500/20 border border-green-500/50 px-4 py-3 flex items-center justify-between gap-4">
+          <p className="text-green-400 text-sm">イベントを作成しました。</p>
+          <Link
+            href={`/admin/events/${createdId}`}
+            className="rounded-lg bg-green-500 px-3 py-1.5 text-sm font-medium text-black hover:bg-green-400"
+          >
+            作成したイベントを開く
+          </Link>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-8">
         <h1 className="font-display text-2xl font-bold text-white">
           イベント一覧

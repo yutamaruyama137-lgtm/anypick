@@ -28,8 +28,8 @@ export default function NewEventPage() {
         return;
       }
       if (!res.ok) throw new Error(data.error || "作成に失敗しました");
-      // フル遷移でイベント詳細へ（クッキーを確実に送ってログイン状態で開く）
-      window.location.href = `/admin/events/${data.event.id}`;
+      // いったんダッシュボードへ（作成完了メッセージ＋イベントを開くリンク）。直接イベントURLだとDB反映遅延で404になる場合があるため
+      window.location.href = `/admin?created=${encodeURIComponent(data.event.id)}`;
     } catch (err) {
       setError(err instanceof Error ? err.message : "エラー");
     } finally {

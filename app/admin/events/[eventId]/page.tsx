@@ -14,13 +14,32 @@ export default async function EventDetailPage({
   const { adminUser } = await ensureAdmin(`/admin/events/${eventId}`);
   const admin = createServiceRoleClient();
 
-  const { data: event } = await admin
+  let { data: event } = await admin
     .from("events")
     .select("*")
     .eq("id", eventId)
     .eq("tenant_id", adminUser.tenant_id)
-    .single();
-  if (!event) notFound();
+    .maybeSingle();
+
+  // 自テナントで見つからない場合、イベント自体は存在するか確認（別テナント or 作成直後の読み取り遅延）
+  if (!event) {
+    const { data: eventAny } = await admin
+      .from("events")
+      .select("id")
+      .eq("id", eventId)
+      .maybeSingle();
+    if (eventAny) {
+      return (
+        <main className="max-w-lg mx-auto p-6">
+          <p className="text-amber-400 mb-4">このイベントにアクセスする権限がありません。</p>
+          <Link href="/admin" className="text-brand-500 hover:underline">
+            ← イベント一覧へ
+          </Link>
+        </main>
+      );
+    }
+    notFound();
+  }
 
   const origin = getAppOrigin();
   const participantUrl = `${origin}/e/${event.event_token}`;

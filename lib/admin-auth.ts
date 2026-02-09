@@ -19,6 +19,16 @@ export async function getOrCreateAdminUser(
     .eq("id", userId)
     .maybeSingle();
 
+  // 同一メールで別ログイン（例: メール vs Google）の場合は既存テナントを返す
+  if (!adminUser && email) {
+    const { data: byEmail } = await admin
+      .from("admin_users")
+      .select("tenant_id")
+      .eq("email", email)
+      .maybeSingle();
+    if (byEmail) return byEmail;
+  }
+
   if (!adminUser && email) {
     const { data: newTenant, error: tenantErr } = await admin
       .from("tenants")
@@ -66,4 +76,17 @@ export async function ensureAdmin(returnTo?: string): Promise<{
   }
 
   return { user, adminUser };
+}
+
+/**
+ * API用: 現在のリクエストのテナントIDを取得。未ログイン or 管理ユーザーでない場合は null。
+ * ページの ensureAdmin と同じ getOrCreateAdminUser を使うので、同一メール＝同一テナントで一貫する。
+ */
+export async function getAdminTenantId(): Promise<string | null> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const admin = createServiceRoleClient();
+  const adminUser = await getOrCreateAdminUser(admin, user.id, user.email ?? undefined);
+  return adminUser?.tenant_id ?? null;
 }
