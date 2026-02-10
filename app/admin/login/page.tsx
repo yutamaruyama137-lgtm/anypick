@@ -18,15 +18,44 @@ export default function AdminLoginPage() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
 
-  // ログイン: バリデーションだけ。通れば form の通常 POST で送信 → サーバーが 302 で /admin に飛ばす（確実に遷移）
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  // ログイン: fetch で送信し、ローディング表示を出してから 302 でリダイレクト
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (password.length < PASSWORD_MIN_LENGTH) {
-      e.preventDefault();
       setMessage(`パスワードは${PASSWORD_MIN_LENGTH}文字以上で入力してください`);
       return;
     }
     setMessage(null);
-    // そのまま送信（form の action/method で POST → 302 をブラウザが追って /admin へ）
+    setLoading(true);
+    const next = searchParams.get("next") ?? "";
+    try {
+      const res = await fetch("/api/admin/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+          ...(next && { next }),
+        }),
+        redirect: "manual",
+        credentials: "include",
+      });
+      if (res.type === "opaqueredirect" || res.status === 302) {
+        const url = res.headers.get("Location") ?? "/admin";
+        window.location.href = url;
+        return;
+      }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setMessage((data.error as string) || "ログインに失敗しました。");
+        return;
+      }
+      window.location.href = "/admin";
+    } catch {
+      setMessage("通信エラーが発生しました。");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // 新規登録は従来どおり fetch
@@ -131,15 +160,7 @@ export default function AdminLoginPage() {
           </p>
         )}
 
-        <form
-          action={mode === "login" ? "/api/admin/auth/login" : undefined}
-          method="post"
-          onSubmit={handleSubmit}
-          className="space-y-4"
-        >
-          {mode === "login" && searchParams.get("next") && (
-            <input type="hidden" name="next" value={searchParams.get("next") ?? ""} />
-          )}
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <input
               type="email"
@@ -184,10 +205,23 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-2xl bg-white py-3 font-semibold text-black transition-smooth hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] focus-ring"
+            className="w-full rounded-2xl bg-white py-3 font-semibold text-black transition-smooth hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] focus-ring flex items-center justify-center gap-2"
           >
+            {loading && (
+              <svg
+                className="w-5 h-5 animate-spin flex-shrink-0 text-black"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                aria-hidden
+              >
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeDasharray="32" strokeDashoffset="12" />
+              </svg>
+            )}
             {loading
-              ? "処理中…"
+              ? mode === "login"
+                ? "ログイン中…"
+                : "処理中…"
               : mode === "login"
                 ? "ログイン"
                 : "新規登録"}
@@ -200,10 +234,7 @@ export default function AdminLoginPage() {
           </p>
         )}
 
-        <p className="mt-6 text-center space-x-4">
-          <Link href="/admin/login/debug" className="text-[var(--text-muted)] text-sm transition-smooth hover:text-white">
-            ログイン状態デバッグ
-          </Link>
+        <p className="mt-6 text-center">
           <Link href="/" className="text-[var(--text-muted)] text-sm transition-smooth hover:text-white">
             トップへ
           </Link>
