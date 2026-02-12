@@ -6,12 +6,22 @@ import type { EventPublic, SessionStartResponse } from "@/lib/types";
 
 type Step = "lp" | "camera" | "preview" | "confirm" | "share" | "done";
 
+const STEP_ORDER: Record<Step, number> = {
+  lp: 0,
+  camera: 1,
+  preview: 2,
+  confirm: 3,
+  share: 4,
+  done: 5,
+};
+
 const AUTO_KEEP_SEC = 30;
 
 export default function EventPage() {
   const params = useParams();
   const event_token = params.event_token as string;
   const [step, setStep] = useState<Step>("lp");
+  const [transitionBack, setTransitionBack] = useState(false);
   const [event, setEvent] = useState<EventPublic | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [alreadySubmitted, setAlreadySubmitted] = useState(false);
@@ -80,19 +90,24 @@ export default function EventPage() {
   useEffect(() => {
     if (sessionId && intentToStartCamera) {
       setIntentToStartCamera(false);
-      setStep("camera");
+      goToStep("camera");
     }
-  }, [sessionId, intentToStartCamera]);
+  }, [sessionId, intentToStartCamera, goToStep]);
+
+  const goToStep = useCallback((next: Step) => {
+    setTransitionBack(STEP_ORDER[next] < STEP_ORDER[step]);
+    setStep(next);
+  }, [step]);
 
   const handleAgree = useCallback(() => {
     if (!agree) return;
     setError(null);
     if (sessionId) {
-      setStep("camera");
+      goToStep("camera");
     } else {
       setIntentToStartCamera(true);
     }
-  }, [agree, sessionId]);
+  }, [agree, sessionId, goToStep]);
 
   const sendMetric = useCallback(
     async (type: "camera_complete" | "save_click" | "outbound_click", platform?: string) => {
@@ -148,18 +163,18 @@ export default function EventPage() {
           setPhotoBlob(blob);
           setCaptureCount((c) => c + 1);
           sendMetric("camera_complete");
-          setStep("preview");
+          goToStep("preview");
         }
       },
       "image/jpeg",
       0.9
     );
-  }, [sendMetric, event?.submission_policy?.max_captures]);
+  }, [sendMetric, event?.submission_policy?.max_captures, goToStep]);
 
   const retake = useCallback(() => {
     setPhotoBlob(null);
-    setStep("camera");
-  }, []);
+    goToStep("camera");
+  }, [goToStep]);
 
   const goToConfirm = useCallback(() => {
     if (autoKeepTimerRef.current) {
@@ -170,8 +185,8 @@ export default function EventPage() {
       clearInterval(countdownIntervalRef.current);
       countdownIntervalRef.current = null;
     }
-    setStep("confirm");
-  }, []);
+    goToStep("confirm");
+  }, [goToStep]);
 
   useEffect(() => {
     if (step !== "preview" || !photoBlob) return;
@@ -195,7 +210,7 @@ export default function EventPage() {
         clearInterval(countdownIntervalRef.current);
         countdownIntervalRef.current = null;
       }
-      setStep("confirm");
+      goToStep("confirm");
     }, AUTO_KEEP_SEC * 1000);
     return () => {
       if (autoKeepTimerRef.current) clearTimeout(autoKeepTimerRef.current);
@@ -203,7 +218,7 @@ export default function EventPage() {
       autoKeepTimerRef.current = null;
       countdownIntervalRef.current = null;
     };
-  }, [step, photoBlob]);
+  }, [step, photoBlob, goToStep]);
 
   const uploadAndSubmit = useCallback(async () => {
     if (!sessionId || !photoBlob || !event) return;
@@ -242,11 +257,11 @@ export default function EventPage() {
         "\n" +
         (event.share_hashtags?.join(" ") ?? "");
       setShareCaption(caption);
-      setStep("share");
+      goToStep("share");
     } catch (err) {
       setError(err instanceof Error ? err.message : "エラーが発生しました");
     }
-  }, [sessionId, photoBlob, event, agreeSubmit]);
+  }, [sessionId, photoBlob, event, agreeSubmit, goToStep]);
 
   const copyCaption = useCallback(async () => {
     await navigator.clipboard.writeText(shareCaption);
@@ -337,7 +352,7 @@ export default function EventPage() {
       )}
 
       {step === "lp" && (
-        <div key="lp" className="max-w-md mx-auto p-6 flex flex-col min-h-screen justify-center animate-fade-in-up">
+        <div key="lp" className={`max-w-md mx-auto p-6 flex flex-col min-h-screen justify-center ${transitionBack ? "animate-fade-in-from-left" : "animate-fade-in-up"}`}>
           <h1 className="font-display text-2xl font-bold text-white mb-2">
             {event.name}
           </h1>
@@ -380,7 +395,7 @@ export default function EventPage() {
       )}
 
       {step === "camera" && (
-        <div key="camera" className="flex flex-col h-dvh animate-fade-in">
+        <div key="camera" className={`flex flex-col h-dvh ${transitionBack ? "animate-fade-in-from-left" : "animate-fade-in"}`}>
           <div className="flex-1 relative bg-black">
             <video
               ref={videoRef}
@@ -404,7 +419,7 @@ export default function EventPage() {
       )}
 
       {step === "preview" && photoBlob && (
-        <div key="preview" className="max-w-md mx-auto p-6 flex flex-col min-h-screen animate-fade-in-up">
+        <div key="preview" className={`max-w-md mx-auto p-6 flex flex-col min-h-screen ${transitionBack ? "animate-fade-in-from-left" : "animate-fade-in-up"}`}>
           <p className="text-[var(--text-muted)] text-sm mb-2">プレビュー（{captureCount}/{maxCaptures}回目）</p>
           {countdown > 0 && (
             <p className="text-[var(--text-dim)] text-xs mb-2">あと {countdown} 秒で自動でKEEPします</p>
@@ -443,7 +458,7 @@ export default function EventPage() {
       )}
 
       {step === "confirm" && photoBlob && (
-        <div key="confirm" className="max-w-md mx-auto p-6 flex flex-col min-h-screen animate-fade-in-up">
+        <div key="confirm" className={`max-w-md mx-auto p-6 flex flex-col min-h-screen ${transitionBack ? "animate-fade-in-from-left" : "animate-fade-in-up"}`}>
           <h2 className="font-display text-xl font-bold text-white mb-2">応募確定</h2>
           <p className="text-[var(--text-muted)] text-sm mb-4">この写真で応募します。提出後は変更できません。</p>
           <div className="rounded-2xl overflow-hidden bg-black aspect-[3/4] mb-6">
@@ -480,7 +495,7 @@ export default function EventPage() {
       )}
 
       {step === "share" && (
-        <div key="share" className="max-w-md mx-auto p-6 flex flex-col min-h-screen justify-center animate-fade-in-up">
+        <div key="share" className={`max-w-md mx-auto p-6 flex flex-col min-h-screen justify-center ${transitionBack ? "animate-fade-in-from-left" : "animate-fade-in-up"}`}>
           <h2 className="font-display text-xl font-bold text-white mb-2">
             応募完了！
           </h2>
@@ -517,7 +532,7 @@ export default function EventPage() {
             )}
           </div>
           <button
-            onClick={() => setStep("done")}
+            onClick={() => goToStep("done")}
             className="mt-8 text-[var(--text-muted)] text-sm transition-smooth hover:text-white"
           >
             閉じる
@@ -526,7 +541,7 @@ export default function EventPage() {
       )}
 
       {step === "done" && (
-        <div key="done" className="max-w-md mx-auto p-6 flex flex-col min-h-screen justify-center animate-fade-in-up">
+        <div key="done" className={`max-w-md mx-auto p-6 flex flex-col min-h-screen justify-center ${transitionBack ? "animate-fade-in-from-left" : "animate-fade-in-up"}`}>
           <h2 className="font-display text-xl font-bold text-white mb-2">
             {alreadySubmitted ? "提出済みです" : "ありがとうございました"}
           </h2>
