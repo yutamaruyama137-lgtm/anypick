@@ -48,21 +48,6 @@ export default function EventPage() {
     if (event && !event.consent_template?.text) setAgree(true);
   }, [event]);
 
-  // 同意チェックが入った時点でセッションを事前開始し、ボタン1タップで即カメラへ
-  useEffect(() => {
-    if (!agree || !event || sessionStartedForAgreeRef.current) return;
-    sessionStartedForAgreeRef.current = true;
-    startSession();
-  }, [agree, event, startSession]);
-
-  // ボタン押下後にセッション準備ができた場合、即カメラへ
-  useEffect(() => {
-    if (sessionId && intentToStartCamera) {
-      setIntentToStartCamera(false);
-      setStep("camera");
-    }
-  }, [sessionId, intentToStartCamera]);
-
   const startSession = useCallback(async (qrSource?: string) => {
     const res = await fetch("/api/public/sessions", {
       method: "POST",
@@ -83,6 +68,21 @@ export default function EventPage() {
       setStep("done");
     }
   }, [event_token]);
+
+  // 同意チェックが入った時点でセッションを事前開始し、ボタン1タップで即カメラへ
+  useEffect(() => {
+    if (!agree || !event || sessionStartedForAgreeRef.current) return;
+    sessionStartedForAgreeRef.current = true;
+    startSession();
+  }, [agree, event, startSession]);
+
+  // ボタン押下後にセッション準備ができた場合、即カメラへ
+  useEffect(() => {
+    if (sessionId && intentToStartCamera) {
+      setIntentToStartCamera(false);
+      setStep("camera");
+    }
+  }, [sessionId, intentToStartCamera]);
 
   const handleAgree = useCallback(() => {
     if (!agree) return;
