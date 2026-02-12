@@ -17,6 +17,8 @@ export default function EventPage() {
   const [alreadySubmitted, setAlreadySubmitted] = useState(false);
   const [agree, setAgree] = useState(false);
   const [agreeSubmit, setAgreeSubmit] = useState(false);
+  const [intentToStartCamera, setIntentToStartCamera] = useState(false);
+  const sessionStartedForAgreeRef = useRef(false);
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(null);
   const [captureCount, setCaptureCount] = useState(0);
   const [mediaAssetId, setMediaAssetId] = useState<string | null>(null);
@@ -46,6 +48,21 @@ export default function EventPage() {
     if (event && !event.consent_template?.text) setAgree(true);
   }, [event]);
 
+  // 同意チェックが入った時点でセッションを事前開始し、ボタン1タップで即カメラへ
+  useEffect(() => {
+    if (!agree || !event || sessionStartedForAgreeRef.current) return;
+    sessionStartedForAgreeRef.current = true;
+    startSession();
+  }, [agree, event, startSession]);
+
+  // ボタン押下後にセッション準備ができた場合、即カメラへ
+  useEffect(() => {
+    if (sessionId && intentToStartCamera) {
+      setIntentToStartCamera(false);
+      setStep("camera");
+    }
+  }, [sessionId, intentToStartCamera]);
+
   const startSession = useCallback(async (qrSource?: string) => {
     const res = await fetch("/api/public/sessions", {
       method: "POST",
@@ -67,12 +84,15 @@ export default function EventPage() {
     }
   }, [event_token]);
 
-  const handleAgree = useCallback(async () => {
+  const handleAgree = useCallback(() => {
     if (!agree) return;
     setError(null);
-    await startSession();
-    setStep("camera");
-  }, [agree, startSession]);
+    if (sessionId) {
+      setStep("camera");
+    } else {
+      setIntentToStartCamera(true);
+    }
+  }, [agree, sessionId]);
 
   const sendMetric = useCallback(
     async (type: "camera_complete" | "save_click" | "outbound_click", platform?: string) => {
@@ -342,10 +362,19 @@ export default function EventPage() {
           )}
           <button
             onClick={handleAgree}
-            disabled={!agree}
-            className="rounded-2xl bg-white py-3.5 px-6 font-semibold text-black transition-smooth hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+            disabled={!agree || (intentToStartCamera && !sessionId)}
+            className="rounded-2xl bg-white py-3.5 px-6 font-semibold text-black transition-smooth hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] flex items-center justify-center gap-2"
           >
-            同意して撮影を始める
+            {intentToStartCamera && !sessionId ? (
+              <>
+                <svg className="w-5 h-5 animate-spin flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden>
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeDasharray="32" strokeDashoffset="12" />
+                </svg>
+                準備中…
+              </>
+            ) : (
+              "同意して撮影を始める"
+            )}
           </button>
         </div>
       )}

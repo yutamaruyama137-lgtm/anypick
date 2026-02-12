@@ -53,11 +53,31 @@ const config: Config = {
           "0%": { opacity: "0", transform: "scale(0.96)" },
           "100%": { opacity: "1", transform: "scale(1)" },
         },
+        loadingDot: {
+          "0%, 80%, 100%": { transform: "scale(0.75)", opacity: "0.5" },
+          "40%": { transform: "scale(1.1)", opacity: "1" },
+        },
+        loadingGlow: {
+          "0%, 100%": { opacity: "0.85" },
+          "50%": { opacity: "1" },
+        },
+        spinReverse: {
+          "0%": { transform: "rotate(360deg)" },
+          "100%": { transform: "rotate(0deg)" },
+        },
       },
       animation: {
         "fade-in": "fadeIn 0.25s ease-out forwards",
         "fade-in-up": "fadeInUp 0.3s ease-out forwards",
         "scale-in": "scaleIn 0.2s ease-out forwards",
+        "loading-dot": "loadingDot 1s ease-in-out infinite",
+        "loading-glow": "loadingGlow 1.8s ease-in-out infinite",
+        "spin-reverse": "spinReverse 2.2s linear infinite",
+      },
+      animationDelay: {
+        "dot-1": "0ms",
+        "dot-2": "160ms",
+        "dot-3": "320ms",
       },
       boxShadow: {
         "btn-press": "0 0 0 2px var(--tw-ring-color)",

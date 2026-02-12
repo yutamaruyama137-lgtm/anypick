@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { LoadingSpinner } from "@/app/components/LoadingSpinner";
 
 type Mode = "login" | "register";
 
@@ -14,6 +15,7 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
@@ -42,7 +44,10 @@ export default function AdminLoginPage() {
       });
       if (res.type === "opaqueredirect" || res.status === 302) {
         const url = res.headers.get("Location") ?? "/admin";
-        window.location.href = url;
+        setIsRedirecting(true);
+        requestAnimationFrame(() => {
+          window.location.href = url;
+        });
         return;
       }
       if (!res.ok) {
@@ -50,7 +55,10 @@ export default function AdminLoginPage() {
         setMessage((data.error as string) || "ログインに失敗しました。");
         return;
       }
-      window.location.href = "/admin";
+      setIsRedirecting(true);
+      requestAnimationFrame(() => {
+        window.location.href = "/admin";
+      });
     } catch {
       setMessage("通信エラーが発生しました。");
     } finally {
@@ -102,6 +110,14 @@ export default function AdminLoginPage() {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-[var(--bg)]">
+      {isRedirecting && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[var(--bg)] animate-fade-in">
+          <LoadingSpinner
+            title="ログインしました"
+            subtitle="リダイレクト中…"
+          />
+        </div>
+      )}
       <div className="w-full max-w-sm animate-fade-in-up">
         <div className="flex gap-1 p-1 rounded-2xl bg-[var(--surface-elevated)] border border-[var(--border)] mb-6">
           <button

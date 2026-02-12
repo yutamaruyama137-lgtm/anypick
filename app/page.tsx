@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AddToHomeScreenHint } from "./components/AddToHomeScreenHint";
 
 export default function HomePage() {
   return (
@@ -6,8 +7,9 @@ export default function HomePage() {
       <h1 className="font-display text-4xl font-bold tracking-tight text-white mb-2">
         AnyPick
       </h1>
-      <p className="text-[var(--text-muted)] text-base mb-10">イベントフォト＆応募</p>
-      <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs sm:max-w-none sm:w-auto">
+      <p className="text-[var(--text-muted)] text-base mb-6">イベントフォト＆応募</p>
+      <AddToHomeScreenHint />
+      <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs sm:max-w-none sm:w-auto mt-2">
         <Link
           href="/admin"
           className="rounded-2xl bg-white py-3.5 px-6 font-semibold text-black text-center transition-smooth hover:bg-zinc-200 active:scale-[0.98] focus-ring"
