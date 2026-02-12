@@ -79,6 +79,11 @@ export default function EventPage() {
     }
   }, [event_token]);
 
+  const goToStep = useCallback((next: Step) => {
+    setTransitionBack(STEP_ORDER[next] < STEP_ORDER[step]);
+    setStep(next);
+  }, [step]);
+
   // 同意チェックが入った時点でセッションを事前開始し、ボタン1タップで即カメラへ
   useEffect(() => {
     if (!agree || !event || sessionStartedForAgreeRef.current) return;
@@ -93,11 +98,6 @@ export default function EventPage() {
       goToStep("camera");
     }
   }, [sessionId, intentToStartCamera, goToStep]);
-
-  const goToStep = useCallback((next: Step) => {
-    setTransitionBack(STEP_ORDER[next] < STEP_ORDER[step]);
-    setStep(next);
-  }, [step]);
 
   const handleAgree = useCallback(() => {
     if (!agree) return;
